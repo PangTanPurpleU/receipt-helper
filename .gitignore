@@ -1,0 +1,8 @@
+node_modules/
+dist/
+src/model-assets.js
+.DS_Store
+.netlify/
+*.zip
+research/
+*handoff*.json
