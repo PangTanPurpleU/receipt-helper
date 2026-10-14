@@ -1,1 +1,1 @@
-{"name": "查重小助手", "short_name": "查重小助手", "start_url": "./", "scope": "./", "display": "standalone", "background_color": "#f7f9f8", "theme_color": "#f7f9f8", "lang": "zh-CN", "icons": [{"src": "icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any"}]}
+{"name": "查重小助手", "short_name": "查重小助手", "start_url": "./", "scope": "./", "display": "standalone", "background_color": "#080f1d", "theme_color": "#080f1d", "lang": "zh-CN", "icons": [{"src": "icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any"}]}

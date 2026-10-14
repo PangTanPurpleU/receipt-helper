@@ -84,3 +84,68 @@ main{padding-bottom:calc(36px + env(safe-area-inset-bottom))}
 .modelCard[data-state=ready] .modelStatus{font-size:13px;font-weight:600;color:var(--ink)}
 .modelCard[data-state=ready] .secondary{min-height:44px;padding:8px 10px;border-radius:11px;color:var(--muted);white-space:nowrap}
 @media(max-width:360px){.modelCard[data-state=ready]{padding:10px 12px;gap:6px}.modelReadyHint{font-size:10px}.modelCard[data-state=ready] .secondary{padding:8px 6px}}
+
+/* Local OCR console: static depth and light keep processing and taps immediate. */
+:root{color-scheme:dark;--bg:#080f1d;--surface:#101c2f;--ink:#edf5ff;--muted:#a0b3cc;--line:#293b56;--accent:#4d9aff;--wash:#152b48;--red:#ffb3a6;--redWash:#39252d;--glass:rgba(8,15,29,.96)}
+body{background:radial-gradient(ellipse 850px 650px at 80% -120px,#193865 0,transparent 68%),radial-gradient(ellipse 550px 420px at 0 300px,#102b40 0,transparent 75%),var(--bg);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(#71b9ff06 1px,transparent 1px),linear-gradient(90deg,#71b9ff06 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(#000,transparent 85%);z-index:0}
+#app{position:relative;z-index:1}
+.brand{color:#edf5ff;letter-spacing:.2px}.brand img{border:1px solid #9bcbff35;box-shadow:0 0 22px #4d9aff18}
+nav .icon{border:1px solid #8eb9ff1c;background:#14233b55;color:#afcfff}
+.eyebrow{display:flex;align-items:center;gap:8px;color:#84caff;letter-spacing:1.3px;font-size:11px}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:#75cfff;box-shadow:0 0 0 4px #67b7ff14,0 0 12px #75cfff66}
+h1{color:#f1f6ff;font-weight:650}h1 span{color:#89ceff;background:linear-gradient(100deg,#c2e7ff,#6ccaff 60%,#97aaff);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.intro p{color:#a9bcd4}
+.stats{position:relative;overflow:hidden;background:linear-gradient(120deg,#172e4aee,#101e34f5 65%);border:1px solid #3b5b8080;border-radius:20px;box-shadow:0 12px 36px #02081338,inset 0 1px 0 #b4dbff0a}
+.stats::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#5ccaff80,#6a8eff40,transparent)}
+.stats strong{color:#e9f4ff;letter-spacing:-.5px}.stats>div:first-child strong{color:#8adaff;text-shadow:0 0 24px #5aafff18}
+.stats small{color:#b3c9e4}.stats span{color:#99b0cc}.stats>div+div{border-color:#7eaeec25}
+.modelCard{background:linear-gradient(110deg,#11283d,#101e33);border-color:#2b4664;border-radius:16px;box-shadow:inset 0 1px 0 #b9e7ff08}
+.modelGlyph{background:#193955;color:#8dd6ff}
+.modelCard[data-state=ready]{background:linear-gradient(105deg,#102d3b,#112238 80%);border:1px solid #2c5262;box-shadow:inset 3px 0 0 #54cda5,0 8px 22px #0208131a;border-radius:14px}
+.modelCard[data-state=ready] .modelStatus{color:#d8f0ff;letter-spacing:.1px;font-size:13px}
+.modelCard[data-state=ready] .statusLight{background:#66e2b2;box-shadow:0 0 0 3px #55dbac10,0 0 10px #66e2b233}
+.modelReadyHint{color:#9ebccc;font-size:11px}
+.modelCard[data-state=ready] .secondary{color:#acc8df;background:#87b9ff08;border:1px solid #7cb2ed20;font-size:11px}
+.modelCard[data-state=downloading] .statusLight{background:#ffd186;box-shadow:0 0 0 3px #ffd18612}
+.library{margin-top:26px}.libraryHead{background:#080f1df5;border-radius:0;padding:12px 0;margin-bottom:10px}
+.libraryHead h2{color:#eef5ff;letter-spacing:.2px}
+.primary{background:linear-gradient(115deg,#245ec2,#3172cf);color:#fff;border:1px solid #81b5ff66;box-shadow:0 4px 16px #287fea28,inset 0 1px 0 #ffffff24}
+.importButton{border-radius:12px;font-weight:600}
+.filters{background:#101f35;border-color:#304c70;border-radius:14px;padding:3px;gap:3px}
+.filters button{border-radius:10px;color:#a4b9d3}
+.filters button[aria-pressed=true]{background:linear-gradient(125deg,#284c7b,#233d65);color:#d9eeff;box-shadow:inset 0 0 0 1px #80b9ff32}
+.selectButton{background:#12243d;border-color:#37567c;color:#bad9fc;border-radius:11px}
+.selectButton.selected{background:#234a74;border-color:#6ca9ed;color:#edf6ff}
+.clearButton{color:#a6bbd3}
+.receipt{background:linear-gradient(110deg,#122136,#101c2f);border-color:#2a3f5c;border-radius:16px;box-shadow:0 4px 16px #0000000c}
+.receiptTitle strong{color:#e8f2ff;font-weight:550}.receiptTitle b{color:#d1eaff;font-weight:600}
+.receiptMark{background:#183553;color:#8dceff;border:1px solid #5a99d626;border-radius:12px}
+.receiptMark.duplicate{background:#39262e;color:#ffb3a6;border-color:#ffb3a61c}
+.receiptMeta{color:#96adca}.receipt>svg{color:#7193ba}
+.chosen{border-color:#72baff;background:linear-gradient(110deg,#193b60,#152d4b);box-shadow:inset 0 0 0 1px #72baff18}
+.badge{background:#12352f;color:#8ddcc0}.badge.red{background:#39262e;color:#ffb8ac}.warning{color:#f1cc90}
+.empty{background:#101d30a6;border-color:#355375;border-radius:18px}.emptyIcon{background:#193653;color:#83cfff;border:1px solid #639bc62b;border-radius:16px}
+.libraryTools #selectionBar button{background:#183653;color:#bfdeff;border:1px solid #3b5f85;border-radius:11px}
+.libraryTools #deleteSelected{background:#39262e;border-color:#70434a;color:#ffb3a6}
+.search{background:#112138;border-color:#385576}.search:focus-within{border-color:#7cc8ff;box-shadow:0 0 0 2px #7cc8ff12}
+.menu{background:#111f34;border-color:#345173;border-radius:16px;box-shadow:0 16px 45px #00000055}
+dialog{border:1px solid #39587c;border-radius:20px;box-shadow:0 24px 80px #00000066}
+dialog::backdrop{background:#020813b0}
+#progress{background:linear-gradient(135deg,#152c48,#101b2e);border-color:#416486;box-shadow:0 0 0 1px #87c9ff08,0 24px 90px #02081399}
+#progress::backdrop{background:#020813b0}.recognitionGlyph{background:#1a395c;color:#8fd2ff;border:1px solid #579ad644}
+#recognitionProgress::-webkit-progress-value{background:linear-gradient(90deg,#4f91ff,#78d6ff)}
+#recognitionProgress::-moz-progress-bar{background:linear-gradient(90deg,#4f91ff,#78d6ff)}
+#progress #stop{background:#1b3555;border-color:#3b5d84;color:#dbedff}
+#progressPercent{color:#9adcff}.recognitionEyebrow{color:#8dcbff}
+#toast{background:#1b3a57;color:#e1f2ff;border:1px solid #517b9f;box-shadow:0 8px 30px #00000044}
+.notice.warn{background:#3a3024;color:#f1cc90}
+button:focus-visible,a:focus-visible{outline-color:#83ceff}
+footer{color:#93abc7}footer svg{color:#77baff}
+@media(hover:hover) and (pointer:fine){nav .icon:hover,.menu button:hover{background:#1c3555}.receipt:hover{border-color:#507ca9}.primary:hover{background:linear-gradient(115deg,#2c6acb,#3272cf)}.libraryActions button:hover{background:#1c3555}.modelCard[data-state=ready] .secondary:hover{background:#1c3555}}
+@media(max-width:600px){.intro{padding-top:28px}.stats{border-radius:18px}.modelCard[data-state=ready]{min-height:70px}.receipt{border-radius:15px}.libraryHead{padding:10px 0}.eyebrow{font-size:10px;letter-spacing:1px}}
+@media(prefers-contrast:more){:root{--muted:#c3d3e8;--line:#6988ad}.receipt,.stats,.modelCard,.filters{border-color:#6988ad}.modelReadyHint,.receiptMeta{color:#c3d3e8}}
+/* A contained toolbar keeps the sticky library heading continuous with the cards. */
+.libraryHead{background:#101c2ff5;border:1px solid #293b56;border-radius:14px;padding:10px 12px}
+@media(max-width:600px){.libraryHead{padding:10px 12px}.importButton{padding:10px 12px}}
+.libraryTools #selectionBar #deleteSelected{background:#39262e;border-color:#70434a;color:#ffb3a6}
