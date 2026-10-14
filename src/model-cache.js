@@ -59,9 +59,17 @@ export function createModelStore({assets,baseURL,cacheStorage=globalThis.caches,
  return {inspect,download,total};
 }
 export const modelStore=createModelStore({assets:MODEL_ASSETS,baseURL:new URL('./',import.meta.url)});
-const stores=new Map([['paddle-v5',modelStore]]);
+const stores=new Map([['paddle-v6-tiny',modelStore]]);
 export function getModelStore(model){
  if(!MODEL_PACKS[model])throw new Error('不支持的本地识别模型');
  if(!stores.has(model))stores.set(model,createModelStore({assets:MODEL_PACKS[model],baseURL:new URL('./',import.meta.url)}));
  return stores.get(model);
+}
+
+// Remove only retired model weights. Reuse tiny weights and the shared runtime;
+// receipt photos and records live in IndexedDB and are never touched here.
+export async function pruneRetiredModels({cacheStorage=globalThis.caches,baseURL=new URL('./',import.meta.url)}={}){
+ if(!cacheStorage)return;
+ const cache=await cacheStorage.open(MODEL_CACHE);
+ for(const prefix of ['PP-OCRv5_mobile','PP-OCRv6_small'])for(const suffix of ['_det.tar','_rec.tar'])await cache.delete(new URL('models/'+prefix+suffix,baseURL).href);
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import JSZip from 'jszip';
-import {parseReceipt,amountCents,dateValue,peerMap,summary,payee,reasons} from '../src/core.js';
+import {orderedLines,parseReceipt,amountCents,dateValue,peerMap,summary,payee,reasons} from '../src/core.js';
 import {exportExcel} from '../src/excel.js';
 const base={Type:'微信支付电子凭证',Transaction:'1234567890123456789012345678',Amount:'55.00',AmountChinese:'伍拾伍元整',Payee:'测试餐厅',Payer:'测试人',Traded:'2026-01-19 19:10:41'};
 test('split long transaction, 515 amount, and payee warning regressions',()=>{const r=parseReceipt(['微信支付电子凭证','交易单号 123456789012345678','9012345678','付款方 姓名:测试人','商户简称:测试加油站','交易金额 小写:515.00元','大写:伍佰壹拾伍元整','交易时间:2026-01-0120:58:46']);assert.equal(r.fields.Transaction,'1234567890123456789012345678');assert.equal(r.fields.Amount,'515.00');assert.equal(r.warning,'');assert.equal(parseReceipt([],base).warning,'');});
@@ -29,4 +29,12 @@ test('indexed duplicate lookup preserves all evidence and peer ordering',()=>{
   for(const [a,b] of [[i,j],[j,i]]){if(!expected.has(rows[a].id))expected.set(rows[a].id,[]);expected.get(rows[a].id).push({id:rows[b].id,reasons:evidence});}
  }
  assert.deepEqual(peerMap(rows),expected);
+});
+
+test('merged payer/payee cells cannot steal values from the adjacent name row',()=>{
+ const item=(text,x,y,w=100,h=54)=>({text,poly:[[x,y],[x+w,y],[x+w,y+h],[x,y+h]]});
+ const items=[item('微信支付转账电子凭证',400,100),item('付款方',100,632),item('姓名',400,666,87,52),item('测试甲',1100,660,118),item('微信号',400,598),item('wxid_test',1000,600),item('收款方',100,767),item('姓名',400,801),item('测试乙',1100,801)];
+ const lines=orderedLines(items);assert.ok(lines.includes('姓名 测试甲'));assert.equal(parseReceipt(lines).fields.Payer,'测试甲');
+ assert.equal(parseReceipt(['微信支付转账电子凭证','付款方','姓名','收款方','姓名 测试乙']).fields.Payer,'');
+ assert.equal(parseReceipt(['微信支付转账电子凭证','付款方 测试甲','姓名','收款方','姓名 测试乙']).fields.Payer,'测试甲');
 });

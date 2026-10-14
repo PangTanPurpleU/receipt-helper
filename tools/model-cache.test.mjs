@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {createModelStore,MODEL_CACHE} from '../src/model-cache.js';
+import {createModelStore,MODEL_CACHE,pruneRetiredModels} from '../src/model-cache.js';
 import {MODEL_PACKS,MODEL_ASSETS} from '../src/model-assets.js';
 import {LOCAL_MODELS,localModel} from '../src/models.js';
 const sha=b=>createHash('sha256').update(b instanceof ArrayBuffer?new Uint8Array(b):b).digest('hex');
@@ -20,7 +20,7 @@ test('old app cache migrates only matching bytes, then model cache survives shel
 test('storage write failure stays unavailable and concurrent downloads share one operation',async()=>{const f=fixture(),a=f.store.download(),b=f.store.download();assert.equal(a,b);await a;assert.equal(f.calls.length,2);const g=fixture(),cache=await g.cacheStorage.open(MODEL_CACHE);cache.put=async()=>{throw new DOMException('full','QuotaExceededError');};await assert.rejects(g.store.download(),{name:'QuotaExceededError'});assert.equal((await g.store.inspect()).ready,false);});
 
 test('model packs include only their own models plus identical shared runtime',()=>{
- assert.deepEqual(MODEL_ASSETS,MODEL_PACKS['paddle-v5']);
+ assert.deepEqual(MODEL_ASSETS,MODEL_PACKS['paddle-v6-tiny']);
  const shared=MODEL_ASSETS.filter(a=>!a.path.startsWith('models/'));
  for(const model of LOCAL_MODELS){
   const assets=MODEL_PACKS[model.id];assert.equal(assets.length,5);
@@ -39,4 +39,12 @@ test('switching model preserves cached models and downloads shared runtime once'
  await v5.download();assert.equal((await v6.inspect()).ready,false);
  await v6.download();assert.deepEqual(calls,['v5','runtime','v6']);
  assert.equal((await v5.inspect()).ready,true);assert.equal((await v6.inspect()).ready,true);
+});
+
+test('retired model cleanup preserves tiny and runtime cache entries',async()=>{
+ const cacheStorage=new MemoryCaches(),baseURL='https://test.invalid/subpath/',cache=await cacheStorage.open(MODEL_CACHE);
+ const paths=['models/PP-OCRv5_mobile_det.tar','models/PP-OCRv5_mobile_rec.tar','models/PP-OCRv6_small_det.tar','models/PP-OCRv6_small_rec.tar','models/PP-OCRv6_tiny_det.tar','models/PP-OCRv6_tiny_rec.tar','vendor/ort/runtime.wasm'];
+ for(const p of paths)await cache.put(new URL(p,baseURL).href,new Response('preserve'));
+ await pruneRetiredModels({cacheStorage,baseURL});
+ for(const [i,p] of paths.entries())assert.equal(!!await cache.match(new URL(p,baseURL).href),i>=4);
 });

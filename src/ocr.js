@@ -1,7 +1,7 @@
 import {parseReceipt,orderedLines,validOrder,amountCents,dateValue,transfer} from './core.js';
 let worker,engine,current,initialization,id=0,pending=new Map();
-export const MODEL_NAMES={'paddle-v5':'PaddleOCR v5 中文','paddle-v6':'PaddleOCR v6 small 中文','paddle-v6-tiny':'PaddleOCR v6 tiny 中文','tess-best':'Tesseract 高精度','tess-fast':'Tesseract 快速'};
-export async function initialize(model='paddle-v5',progress=()=>{}){
+export const MODEL_NAMES={'paddle-v6-tiny':'PaddleOCR v6 tiny 中文'};
+export async function initialize(model='paddle-v6-tiny',progress=()=>{}){
  if(current===model&&engine)return;
  progress('正在启动本地识别引擎…');
  // Photo selection can warm the engine before import starts. Share that
@@ -33,7 +33,7 @@ async function predict(canvas){
  }
  throw new Error('识别模型未初始化');
 }
-export async function recognize(file,model='paddle-v5',progress=()=>{},retry=true){
+export async function recognize(file,model='paddle-v6-tiny',progress=()=>{},retry=true){
  // Decode while the worker loads. Await both even on failure, so the next
  // file cannot terminate an initialization that is still in progress.
  const [ready,image]=await Promise.allSettled([initialize(model,progress),canvasFor(file)]);

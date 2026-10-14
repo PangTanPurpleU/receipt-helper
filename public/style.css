@@ -52,3 +52,27 @@ main{padding-bottom:calc(36px + env(safe-area-inset-bottom))}
 .modelChoice select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .modelChoice select:disabled{opacity:.6}
 @media(max-width:600px){.modelChoice{flex-wrap:wrap}.modelChoice select{flex:1}.modelControls{grid-row:auto}}
+
+/* Ready models are supporting status, rather than a second content card. */
+.modelCard[data-state=ready]{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 12px;margin-top:10px;border-radius:13px;background:transparent;min-height:46px}
+.modelCard[data-state=ready] .modelGlyph,.modelCard[data-state=ready] h2,.modelCard[data-state=ready]>p,.modelCard[data-state=ready] .modelPrivacy{display:none}
+.modelCard[data-state=ready] .modelStatus{margin:0;font-size:12px}
+.modelCard[data-state=ready] .modelControls{display:flex;gap:0}
+.modelCard[data-state=ready] .secondary{min-width:0;min-height:38px;padding:6px;font-size:11px;border:0;background:transparent}
+.modelCard[data-state=ready] .secondary svg{width:14px;height:14px}
+.libraryTools{margin-bottom:16px}
+.filterRow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.filterRow .filters{width:max-content;flex-shrink:0;margin:0}
+.filterRow .filters button{min-height:44px;white-space:nowrap}
+.libraryActions{display:flex;align-items:center;gap:4px}
+.libraryActions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:8px 10px;border-radius:12px;font-size:12px;white-space:nowrap}
+.libraryActions svg{width:17px;height:17px}
+.clearButton{color:var(--muted)}
+.selectButton{border:1px solid var(--line);background:var(--surface)}
+.selectButton.selected{background:var(--wash);border-color:var(--accent);color:var(--ink)}
+.libraryTools #selectionBar{justify-content:flex-end;gap:8px;padding:10px 0 0;margin:0}
+.libraryTools #selectionBar span{margin:0 auto 0 4px;white-space:nowrap;color:var(--muted);font-size:12px}
+.libraryTools #selectionBar button{min-height:44px;padding:8px 12px;font-size:12px;white-space:nowrap}
+.libraryTools #deleteSelected{background:var(--redWash);color:var(--red)}
+@media(max-width:400px){.filterRow{gap:4px}.filterRow .filters{width:auto}.filterRow .filters button{min-width:44px;padding:4px 8px}.libraryActions{gap:2px}.libraryActions button{padding:8px}.libraryActions .clearButton span{display:none}.clearButton{width:44px}}
+@media(max-width:360px){.filterRow .filters button{padding:4px 6px}.libraryActions button{padding:7px}.libraryActions .selectButton svg{display:none}.libraryTools #selectionBar{gap:5px}.libraryTools #selectionBar button{padding:8px}}
