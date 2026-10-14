@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import JSZip from 'jszip';
-import {parseReceipt,amountCents,dateValue,peerMap,summary,payee} from '../src/core.js';
+import {parseReceipt,amountCents,dateValue,peerMap,summary,payee,reasons} from '../src/core.js';
 import {exportExcel} from '../src/excel.js';
 const base={Type:'微信支付电子凭证',Transaction:'1234567890123456789012345678',Amount:'55.00',AmountChinese:'伍拾伍元整',Payee:'测试餐厅',Payer:'测试人',Traded:'2026-01-19 19:10:41'};
 test('split long transaction, 515 amount, and payee warning regressions',()=>{const r=parseReceipt(['微信支付电子凭证','交易单号 123456789012345678','9012345678','付款方 姓名:测试人','商户简称:测试加油站','交易金额 小写:515.00元','大写:伍佰壹拾伍元整','交易时间:2026-01-0120:58:46']);assert.equal(r.fields.Transaction,'1234567890123456789012345678');assert.equal(r.fields.Amount,'515.00');assert.equal(r.warning,'');assert.equal(parseReceipt([],base).warning,'');});
@@ -11,3 +11,22 @@ test('duplicate decisions distinguish same amount from same transaction and igno
 test('xlsx keeps root relationships, exact five columns, total, ascending dates, text IDs and red duplicate style',async()=>{const rows=[{id:'a',fields:{...base,Traded:'2026-01-20 12:00:00'}},{id:'b',fields:base}];const blob=await exportExcel(rows),zip=await JSZip.loadAsync(await blob.arrayBuffer());assert.ok(zip.file('_rels/.rels'));const xml=await zip.file('xl/worksheets/sheet1.xml').async('string');assert.match(xml,/<f>SUM\(B3:B4\)<\/f><v>110.00<\/v>/);assert.match(xml,/<c r="D3" s="0" t="inlineStr"/);assert.match(xml,/<c r="E3" s="3"/);assert.ok(xml.indexOf('46041.79908564815')!==-1||xml.includes('46041.799'));assert.equal((xml.match(/<row /g)||[]).length,4);const styles=await zip.file('xl/styles.xml').async('string');assert.match(styles,/FFB42318/);});
 
 test('published OCR traditional merchant label is excluded from payee',()=>{const r=parseReceipt(['微信支付电子凭证','收款方商戶简称：虚构星云文具店','交易单号：4200000000202610141234567890','付款方姓名：测试用户甲','小写：128.50 元','大写：壹佰贰拾捌元伍角','交易时间：2026-10-1409:10:11']);assert.equal(r.fields.Payee,'虚构星云文具店');assert.equal(r.warning,'');});
+
+test('indexed duplicate lookup preserves all evidence and peer ordering',()=>{
+ const rows=[];
+ for(let i=0;i<180;i++)rows.push({id:String(i),hash:i%7===0?'same-photo':String(i),fields:{
+  ...base,Type:i%4===0?'微信支付转账电子凭证':'微信支付电子凭证',
+  Transaction:i%3===0?base.Transaction:i%3===1?'':String(i).padStart(28,'0'),
+  Certificate:i%5===0?'same-certificate':'',MerchantOrder:i%6===0?'same-merchant':'',
+  Amount:['55.00','55','0','bad'][i%4],Traded:i%8===0?'2026-02-30 12:00:00':base.Traded,
+  Payer:i%9===0?'':i%2?'测 试人':'测试人',Payee:i%10===0?'':i%2?'测试 餐厅':'测试餐厅'
+ }});
+ rows.push({...rows[1],id:'delimiter-a',fields:{...base,Payer:'a|b',Payee:'c',Transaction:''}});
+ rows.push({...rows[1],id:'delimiter-b',fields:{...base,Payer:'a',Payee:'b|c',Transaction:''}});
+ const expected=new Map();
+ for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
+  const evidence=reasons(rows[i],rows[j]);if(!evidence.length)continue;
+  for(const [a,b] of [[i,j],[j,i]]){if(!expected.has(rows[a].id))expected.set(rows[a].id,[]);expected.get(rows[a].id).push({id:rows[b].id,reasons:evidence});}
+ }
+ assert.deepEqual(peerMap(rows),expected);
+});

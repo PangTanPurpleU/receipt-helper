@@ -1,8 +1,9 @@
 import {records,save,photo,remove,restoreDeleted,hash,backup,restoreZIP,openDB,recoveryBackup} from './storage.js';
 import {fieldDefs,payee,summary,peerMap,filtered,parseReceipt,transfer} from './core.js';
-import {recognize,dispose} from './ocr.js';
+import {recognize,dispose,initialize} from './ocr.js';
 import {exportExcel} from './excel.js';
 import {modelStore} from './model-cache.js';
+import {createBatchRecognizer} from './batch-recognition.js';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const paths={search:'m21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',photo:'M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m-1 14 5-5 4 4 3-3 6 6M8 8h.01',download:'M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4',more:'M5 12h.01M12 12h.01M19 12h.01',check:'m5 12 4 4L19 6',close:'m6 6 12 12M6 18 18 6',trash:'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',export:'M12 16V3m-4 4 4-4 4 4M4 13v8h16v-8',arrow:'m9 5 7 7-7 7',shield:'M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3m-4 9 3 3 5-6',select:'M3 3h18v18H3z m4 9 3 3 7-7',repeat:'M4 8a9 9 0 0 1 15-3l2 3M21 3v5h-5M20 16a9 9 0 0 1-15 3l-2-3M3 21v-5h5'};
 const icon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[n]}"/></svg>`;
@@ -68,12 +69,13 @@ async function showDetail(id){const r=rows.find(r=>r.id===id);if(!r)return;activ
 async function runRows(items){
  if(busy||!items.length)return;if(!await requireModel()||busy)return;
  cancel=false;setBusy(true);batchProgress(0,items.length);let count=0,processed=0;
+ const recognizeBatch=createBatchRecognizer((file,progress)=>recognize(file,model,progress),hash);
  try{
   for(const r of items){
    if(cancel)break;batchProgress(processed,items.length,r.name);status('正在读取照片…');
    const blob=await photo(r.id);
    if(!blob){processed++;batchProgress(processed,items.length,r.name);continue;}
-   try{const result=await recognize(blob,model,status);status('正在保存识别结果…');await save({...r,...result,model});count++;processed++;batchProgress(processed,items.length,r.name);}
+   try{const {result}=await recognizeBatch(blob,status);status('正在保存识别结果…');await save({...r,...result,model});count++;processed++;batchProgress(processed,items.length,r.name);}
    catch(e){toast(r.name+'：'+e.message);break;}
   }
   await refresh();toast(`已重新识别 ${count} 张凭证`);
@@ -83,6 +85,7 @@ async function importFiles(files){
  if(busy)return;const items=Array.from(files);if(!items.length)return;
  if(!await requireModel()||busy){$('#files').value='';return;}
  cancel=false;setBusy(true);batchProgress(0,items.length);$('#importErrors').hidden=true;
+ const recognizeBatch=createBatchRecognizer((file,progress)=>recognize(file,model,progress),hash);
  let count=0,failed=0,lastError='';
  try{
   await navigator.storage?.persist?.();
@@ -90,19 +93,19 @@ async function importFiles(files){
    if(cancel)break;const file=items[i];batchProgress(i,items.length,file.name);status('正在读取照片…');
    if(file.size>30*1024*1024){failed++;toast(file.name+' 超过 30 MB，请缩小后导入');batchProgress(i+1,items.length,file.name);continue;}
    const id=crypto.randomUUID(),r={id,name:file.name,photo:'photos/'+id+'.'+(/\.png$/i.test(file.name)?'png':'jpg'),imported:new Date().toISOString(),fields:{},raw:'',warning:''};
-   try{r.hash=await hash(file);const result=await recognize(file,model,status);status('正在保存识别结果…');await save({...r,...result,model},file);count++;await refresh();}
+   try{const recognized=await recognizeBatch(file,status);r.hash=recognized.hash;status('正在保存识别结果…');await save({...r,...recognized.result,model},file);count++;}
    catch(e){failed++;lastError=e.message||String(e);$('#importErrors').textContent=file.name+'：'+lastError;$('#importErrors').hidden=false;toast(file.name+'：'+lastError);}
    batchProgress(i+1,items.length,file.name);
   }
   toast(`已导入 ${count} 张${failed?`，${failed} 张未完成：${lastError}`:''}`);
- }finally{setBusy(false);$('#files').value='';}
+ }finally{try{await refresh();}finally{setBusy(false);$('#files').value='';}}
 }
 function closeMenu(){if($('#menu').contains(document.activeElement))$('#moreToggle').focus();$('#menu').hidden=true;$('#moreToggle').setAttribute('aria-expanded','false');}
 $('#moreToggle').onclick=()=>{const open=$('#menu').hidden;$('#menu').hidden=!open;$('#moreToggle').setAttribute('aria-expanded',open);};document.addEventListener('click',e=>{if(!e.target.closest('#menu,#moreToggle'))closeMenu();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
 function searchOpen(open){$('#searchWrap').hidden=!open;$('#searchToggle').setAttribute('aria-expanded',open);if(open)$('#search').focus();else{query='';$('#search').value='';render();$('#searchToggle').focus();}}
 $('#searchToggle').onclick=()=>searchOpen($('#searchWrap').hidden);$('#searchClose').onclick=()=>searchOpen(false);$('#search').oninput=e=>{query=e.target.value;render();};$('#selectToggle').onclick=()=>{selection=!selection;selected.clear();render();};$('#selectAll').onclick=()=>{const ids=visible().map(r=>r.id),all=ids.every(id=>selected.has(id));for(const id of ids)all?selected.delete(id):selected.add(id);render();};$('#deleteSelected').onclick=()=>confirm(`删除 ${selected.size} 张凭证？`,'所选凭证会移入本地已删除列表，可通过“更多操作”恢复。',async()=>{const n=await remove([...selected]);selected.clear();await refresh();toast(`已删除 ${n} 张凭证`);});
 for(const b of document.querySelectorAll('[data-filter]'))b.onclick=()=>{filter=b.dataset.filter;for(const x of document.querySelectorAll('[data-filter]'))x.setAttribute('aria-pressed',x===b);render();};
-$('#import').onclick=()=>{if(modelState.ready&&!modelDownloading)$('#files').click();else{focusModel();toast(modelDownloading?'模型正在下载，完成后即可导入':'请先下载本地识别模型');}};$('#files').onchange=e=>importFiles(e.target.files);$('#stop').onclick=()=>{cancel=true;$('#stop').disabled=true;status('当前凭证完成后停止');};$('#progress').oncancel=e=>e.preventDefault();
+$('#import').onclick=()=>{if(modelState.ready&&!modelDownloading){$('#files').click();void offlineRuntime().then(()=>initialize(model)).catch(()=>{});}else{focusModel();toast(modelDownloading?'模型正在下载，完成后即可导入':'请先下载本地识别模型');}};$('#files').onchange=e=>importFiles(e.target.files);$('#stop').onclick=()=>{cancel=true;$('#stop').disabled=true;status('当前凭证完成后停止');};$('#progress').oncancel=e=>e.preventDefault();
 async function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}
 const dated=()=>new Date().toISOString().slice(0,10);
 $('#excel').onclick=async()=>{closeMenu();if(!rows.length){toast('暂无可导出的凭证');return;}try{await download(await exportExcel(rows),'查重小助手-'+dated()+'.xlsx');toast('Excel 已生成，共 '+rows.length+' 张凭证');}catch(e){toast(e.message);}};$('#backup').onclick=async()=>{closeMenu();if(!rows.length){toast('暂无可备份的凭证');return;}try{await download(await backup(),'查重小助手备份-'+dated()+'.zip');toast('备份已生成，请保存下载文件');}catch(e){toast(e.message);}};$('#restore').onclick=()=>{closeMenu();$('#zip').click();};$('#zip').onchange=e=>{const file=e.target.files[0];if(!file)return;confirm('恢复备份？','备份会替换当前列表。当前数据会自动留存恢复前备份，并另行下载 ZIP。',async()=>{if(rows.length)await download(await backup(),'恢复前自动备份-'+dated()+'.zip');cancel=false;setBusy(true);$('#progressTitle').textContent='正在恢复备份';$('#stop').hidden=true;$('#progressCount').textContent='正在校验备份文件';$('#progressPercent').textContent='';$('#recognitionProgress').removeAttribute('value');status('正在校验并恢复备份…');try{const n=await restoreZIP(file);selected.clear();await refresh();toast(`已恢复 ${n} 张凭证`);}finally{setBusy(false);$('#zip').value='';}},'恢复备份');};$('#recoverBackup').onclick=async()=>{closeMenu();const b=await recoveryBackup();if(b)await download(b,'恢复前备份.zip');else toast('暂无恢复前备份');};$('#reocr').onclick=()=>{closeMenu();if(!rows.length){toast('暂无可重新识别的凭证');return;}confirm('重新识别全部凭证？','新的识别结果会替换已填写的字段。识别期间请保持页面打开。',()=>runRows(rows),'重新识别');};$('#undo').onclick=async()=>{closeMenu();try{const n=await restoreDeleted();await refresh();toast(`已恢复 ${n} 张已删除凭证`);}catch(e){toast(e.message);}};$('#about').onclick=()=>{closeMenu();$('#info').showModal();};$('#infoClose').onclick=()=>$('#info').close();

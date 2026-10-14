@@ -21,5 +21,33 @@ export function parseReceipt(input,existing=null){const lines=input.flatMap(s=>s
  }
  const warnings=[];const isTransfer=f.Type?.includes('转账');if(!validOrder(f.Transaction,isTransfer))warnings.push((isTransfer?'转账单号':'交易单号')+'未识别或不完整，请核对');if(amountCents(f.Amount)===null)warnings.push('金额未识别，请核对');const upper=moneyChinese(f.AmountChinese);if(upper&&f.Amount&&upper!==f.Amount)warnings.push('金额大小写不一致，请核对');if(!f.Payer)warnings.push('付款方未识别，请核对');if(!isTransfer&&!f.Payee)warnings.push('收款方未识别，请核对');if(!dateValue(f.Traded))warnings.push('交易时间未识别，请核对');return {fields:f,warning:warnings.join('；')};}
 export function reasons(a,b){if(a.id===b.id)return [];const result=[];if(a.hash&&a.hash===b.hash)result.push('照片内容相同');if(transfer(a)===transfer(b)&&validOrder(a.fields.Transaction,transfer(a))&&a.fields.Transaction===b.fields.Transaction)result.push('交易/转账单号相同');if(a.fields.Certificate&&a.fields.Certificate===b.fields.Certificate)result.push('凭证编号相同');if(!transfer(a)&&!transfer(b)&&a.fields.MerchantOrder&&a.fields.MerchantOrder===b.fields.MerchantOrder&&a.fields.Payee&&norm(a.fields.Payee)===norm(b.fields.Payee))result.push('商户单号及收款方相同');if(!transfer(a)&&!transfer(b)&&amountCents(a.fields.Amount)>0&&a.fields.Amount===b.fields.Amount&&dateValue(a.fields.Traded)&&a.fields.Traded===b.fields.Traded&&a.fields.Payer&&a.fields.Payee&&norm(a.fields.Payer)===norm(b.fields.Payer)&&norm(a.fields.Payee)===norm(b.fields.Payee))result.push('金额、时间、收付款方相同');return result;}
-export function peerMap(rows){const m=new Map();for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){const why=reasons(rows[i],rows[j]);if(why.length){if(!m.has(rows[i].id))m.set(rows[i].id,[]);if(!m.has(rows[j].id))m.set(rows[j].id,[]);m.get(rows[i].id).push({id:rows[j].id,reasons:why});m.get(rows[j].id).push({id:rows[i].id,reasons:why});}}return m;}
+// Index exactly the same evidence as reasons(), then compare only candidate
+// pairs. JSON tuple keys avoid delimiter collisions in names and identifiers.
+function evidenceKeys(r){
+ const f=r.fields,isTransfer=transfer(r),keys=[];
+ const key=(...parts)=>keys.push(JSON.stringify(parts));
+ if(r.hash)key('photo',r.hash);
+ if(validOrder(f.Transaction,isTransfer))key('transaction',isTransfer,f.Transaction);
+ if(f.Certificate)key('certificate',f.Certificate);
+ if(!isTransfer&&f.MerchantOrder&&f.Payee)key('merchant',f.MerchantOrder,norm(f.Payee));
+ if(!isTransfer&&amountCents(f.Amount)>0&&dateValue(f.Traded)&&f.Payer&&f.Payee)key('parties',f.Amount,f.Traded,norm(f.Payer),norm(f.Payee));
+ return keys;
+}
+export function peerMap(rows){
+ const m=new Map(),index=new Map(),keys=rows.map(evidenceKeys);
+ keys.forEach((list,i)=>{for(const key of list){if(!index.has(key))index.set(key,[]);index.get(key).push(i);}});
+ for(let i=0;i<rows.length;i++){
+  const candidates=new Set();
+  for(const key of keys[i])for(const j of index.get(key))if(j>i)candidates.add(j);
+  for(const j of [...candidates].sort((a,b)=>a-b)){
+   const why=reasons(rows[i],rows[j]);
+   if(!why.length)continue;
+   if(!m.has(rows[i].id))m.set(rows[i].id,[]);
+   if(!m.has(rows[j].id))m.set(rows[j].id,[]);
+   m.get(rows[i].id).push({id:rows[j].id,reasons:why});
+   m.get(rows[j].id).push({id:rows[i].id,reasons:why});
+  }
+ }
+ return m;
+}
 export function filtered(rows,search='',duplicates=false,peers=peerMap(rows)){const q=norm(search).toLowerCase();return rows.filter(r=>(!duplicates||peers.has(r.id))&&(!q||norm([r.name,...Object.values(r.fields)].join(' ')).toLowerCase().includes(q)));}

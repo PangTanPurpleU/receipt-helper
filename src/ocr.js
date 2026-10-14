@@ -1,16 +1,24 @@
 import {parseReceipt,orderedLines,validOrder,amountCents,dateValue,transfer} from './core.js';
-let worker,engine,current,id=0,pending=new Map();
+let worker,engine,current,initialization,id=0,pending=new Map();
 export const MODEL_NAMES={'paddle-v5':'PaddleOCR v5 中文','paddle-v6':'PaddleOCR v6 中文','tess-best':'Tesseract 高精度','tess-fast':'Tesseract 快速'};
 export async function initialize(model='paddle-v5',progress=()=>{}){
  if(current===model&&engine)return;
- await dispose();progress('正在启动本地识别引擎…');
- if(model.startsWith('paddle')){
-  worker=new Worker(new URL('paddle-worker.js',import.meta.url),{type:'module'});
-  worker.onmessage=({data})=>{const p=pending.get(data.id);if(p){pending.delete(data.id);data.error?p.reject(new Error(data.error)):p.resolve(data);}};
-  worker.onerror=e=>{for(const p of pending.values())p.reject(new Error(e.message||'识别线程启动失败'));pending.clear();};
-  await send({type:'init',model});engine='paddle';
- }
- current=model;
+ progress('正在启动本地识别引擎…');
+ // Photo selection can warm the engine before import starts. Share that
+ // initialization, including failures, instead of starting a second worker.
+ if(initialization){await initialization;if(current===model&&engine)return;}
+ const operation=(async()=>{
+  await dispose();
+  if(model.startsWith('paddle')){
+   worker=new Worker(new URL('paddle-worker.js',import.meta.url),{type:'module'});
+   worker.onmessage=({data})=>{const p=pending.get(data.id);if(p){pending.delete(data.id);data.error?p.reject(new Error(data.error)):p.resolve(data);}};
+   worker.onerror=e=>{for(const p of pending.values())p.reject(new Error(e.message||'识别线程启动失败'));pending.clear();};
+   await send({type:'init',model});engine='paddle';
+  }
+  current=model;
+ })();
+ initialization=operation;
+ try{await operation;}finally{if(initialization===operation)initialization=null;}
 }
 function send(data){const requestId=++id;return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('模型加载或识别超时，请重新打开页面重试'));},180000);pending.set(requestId,{resolve:v=>{clearTimeout(timer);resolve(v);},reject:e=>{clearTimeout(timer);reject(e);}});worker.postMessage({...data,id:requestId},data.pixels?[data.pixels]:[]);});}
 export async function dispose(){current=null;if(worker){worker.terminate();worker=null;}if(engine&&engine!=='paddle')await engine.terminate();engine=null;for(const p of pending.values())p.reject(new Error('识别已停止'));pending.clear();}
@@ -26,7 +34,12 @@ async function predict(canvas){
  throw new Error('识别模型未初始化');
 }
 export async function recognize(file,model='paddle-v5',progress=()=>{},retry=true){
- await initialize(model,progress);progress('正在本地识别凭证…');const start=performance.now(),canvas=await canvasFor(file);let r=await predict(canvas);
+ // Decode while the worker loads. Await both even on failure, so the next
+ // file cannot terminate an initialization that is still in progress.
+ const [ready,image]=await Promise.allSettled([initialize(model,progress),canvasFor(file)]);
+ if(ready.status==='rejected')throw ready.reason;
+ if(image.status==='rejected')throw image.reason;
+ progress('正在本地识别凭证…');const start=performance.now(),canvas=image.value;let r=await predict(canvas);
  const lines=r.items?.length?orderedLines(r.items):r.text.split('\n');let receipt=parseReceipt(lines);receipt.raw=lines.join('\n');
  if(retry&&(!validOrder(receipt.fields.Transaction,transfer(receipt))||amountCents(receipt.fields.Amount)===null||!receipt.fields.Payer||!dateValue(receipt.fields.Traded))){
   const crop=document.createElement('canvas');crop.width=canvas.width;crop.height=Math.round(canvas.height*.58);crop.getContext('2d').drawImage(canvas,0,canvas.height*.08,canvas.width,crop.height,0,0,crop.width,crop.height);
