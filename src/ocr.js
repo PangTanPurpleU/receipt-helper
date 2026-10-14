@@ -41,7 +41,7 @@ export async function recognize(file,model='paddle-v6-tiny',progress=()=>{},retr
  if(image.status==='rejected')throw image.reason;
  progress('正在本地识别凭证…');const start=performance.now(),canvas=image.value;let r=await predict(canvas);
  const lines=r.items?.length?orderedLines(r.items):r.text.split('\n');let receipt=parseReceipt(lines);receipt.raw=lines.join('\n');
- if(retry&&(!validOrder(receipt.fields.Transaction,transfer(receipt))||amountCents(receipt.fields.Amount)===null||!receipt.fields.Payer||!dateValue(receipt.fields.Traded))){
+ if(retry&&(!validOrder(receipt.fields.Transaction,transfer(receipt))||amountCents(receipt.fields.Amount)===null||!receipt.fields.Payer||(!transfer(receipt)&&!receipt.fields.Payee)||!dateValue(receipt.fields.Traded))){
   const crop=document.createElement('canvas');crop.width=canvas.width;crop.height=Math.round(canvas.height*.58);crop.getContext('2d').drawImage(canvas,0,canvas.height*.08,canvas.width,crop.height,0,0,crop.width,crop.height);
   const extra=await predict(crop),extraLines=extra.items?.length?orderedLines(extra.items):extra.text.split('\n');const second=parseReceipt([receipt.fields.Type,...extraLines]);
   for(const [k,v] of Object.entries(second.fields))if((!receipt.fields[k]||(k==='Transaction'&&!validOrder(receipt.fields[k],transfer(receipt)))||(k==='Traded'&&!dateValue(receipt.fields[k])))&&v)receipt.fields[k]=v;

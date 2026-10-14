@@ -38,3 +38,18 @@ test('merged payer/payee cells cannot steal values from the adjacent name row',(
  assert.equal(parseReceipt(['微信支付转账电子凭证','付款方','姓名','收款方','姓名 测试乙']).fields.Payer,'');
  assert.equal(parseReceipt(['微信支付转账电子凭证','付款方 测试甲','姓名','收款方','姓名 测试乙']).fields.Payer,'测试甲');
 });
+
+test('single-row recipient labels stay paired with earlier baseline names without stealing merged name rows',()=>{
+ const item=(text,x,y,w=100,h=48)=>({text,poly:[[x,y],[x+w,y],[x+w,y+h],[x,y+h]]});
+ const lines=orderedLines([item('微信支付电子凭证',300,100),item('姓名：测试付款人',450,1050),item('收款方',253,1127,106,49),item('光头龙虾',453,1119,143,47),item('交易金额',250,1200),item('小写：848.00',450,1200)]);
+ assert.ok(lines.includes('收款方 光头龙虾'));assert.equal(parseReceipt(lines).fields.Payee,'光头龙虾');assert.equal(parseReceipt(lines).fields.Payer,'测试付款人');
+ const reversed=orderedLines([item('微信支付电子凭证',300,100),item('收款方',253,1119),item('·w·☒☒',453,1127)]);
+ assert.equal(parseReceipt(reversed).fields.Payee,'w');
+});
+test('garbled recipient retains Chinese, Latin letters and digits without importing remarks or transfer recipients',()=>{
+ const parse=value=>parseReceipt(['微信支付电子凭证','收款方 '+value,'收/付款方备注 收款方说明：二维码收款']).fields.Payee;
+ assert.equal(parse('□光★头龙虾A12🙂'),'光头龙虾A12');assert.equal(parse('·w·'),'w');assert.equal(parse('＊＊□'),'');
+ assert.equal(parse('测试有限公司（分店）'),'测试有限公司(分店)');assert.equal(parse('星·云商店'),'星·云商店');
+ assert.equal(parseReceipt(['微信支付电子凭证','收款方','交易金额 小写32.00','收/付款方备注 收款方说明：二维码收款']).fields.Payee,'');
+ assert.equal(parseReceipt(['微信支付转账电子凭证','收款方 ·w·']).fields.Payee,'');
+});
