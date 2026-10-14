@@ -218,3 +218,4 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
 @media(hover:hover) and (pointer:fine){.libraryActions .clearButton:hover{background:var(--redWash)}.libraryActions .searchToggle:hover{background:transparent}}
 
 .searchControl .search:focus-within{box-shadow:none}
+@media(max-width:360px){.filterRow{gap:4px}.filterRow .filters button{padding:4px 5px;min-width:44px}.libraryActions{gap:2px}.libraryActions button{padding:7px}}
