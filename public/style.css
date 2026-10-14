@@ -76,3 +76,11 @@ main{padding-bottom:calc(36px + env(safe-area-inset-bottom))}
 .libraryTools #deleteSelected{background:var(--redWash);color:var(--red)}
 @media(max-width:400px){.filterRow{gap:4px}.filterRow .filters{width:auto}.filterRow .filters button{min-width:44px;padding:4px 8px}.libraryActions{gap:2px}.libraryActions button{padding:8px}}
 @media(max-width:360px){.filterRow .filters button{padding:4px 6px}.libraryActions button{padding:7px}.libraryActions .selectButton svg,.libraryActions .clearButton svg{display:none}.libraryTools #selectionBar{gap:5px}.libraryTools #selectionBar button{padding:8px}}
+
+/* Explain readiness in everyday language without expanding the download card. */
+.modelReadyHint{display:block;color:var(--muted);font-size:11px;line-height:1.5;margin:5px 0 0 14px}
+.modelCard[data-state=ready]{padding:10px 14px;background:var(--wash);border-color:transparent;min-height:70px;border-radius:16px}
+.modelCard[data-state=ready] .modelHeading{min-width:0}
+.modelCard[data-state=ready] .modelStatus{font-size:13px;font-weight:600;color:var(--ink)}
+.modelCard[data-state=ready] .secondary{min-height:44px;padding:8px 10px;border-radius:11px;color:var(--muted);white-space:nowrap}
+@media(max-width:360px){.modelCard[data-state=ready]{padding:10px 12px;gap:6px}.modelReadyHint{font-size:10px}.modelCard[data-state=ready] .secondary{padding:8px 6px}}
