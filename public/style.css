@@ -65,7 +65,7 @@ main{padding-bottom:calc(36px + env(safe-area-inset-bottom))}
 .filterRow .filters{width:max-content;flex-shrink:0;margin:0}
 .filterRow .filters button{min-height:44px;white-space:nowrap}
 .libraryActions{display:flex;align-items:center;gap:4px}
-.libraryActions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:8px 10px;border-radius:12px;font-size:12px;white-space:nowrap}
+.libraryActions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;min-width:44px;padding:8px 10px;border-radius:12px;font-size:12px;white-space:nowrap}
 .libraryActions svg{width:17px;height:17px}
 .clearButton{color:var(--muted)}
 .selectButton{border:1px solid var(--line);background:var(--surface)}
@@ -74,5 +74,5 @@ main{padding-bottom:calc(36px + env(safe-area-inset-bottom))}
 .libraryTools #selectionBar span{margin:0 auto 0 4px;white-space:nowrap;color:var(--muted);font-size:12px}
 .libraryTools #selectionBar button{min-height:44px;padding:8px 12px;font-size:12px;white-space:nowrap}
 .libraryTools #deleteSelected{background:var(--redWash);color:var(--red)}
-@media(max-width:400px){.filterRow{gap:4px}.filterRow .filters{width:auto}.filterRow .filters button{min-width:44px;padding:4px 8px}.libraryActions{gap:2px}.libraryActions button{padding:8px}.libraryActions .clearButton span{display:none}.clearButton{width:44px}}
-@media(max-width:360px){.filterRow .filters button{padding:4px 6px}.libraryActions button{padding:7px}.libraryActions .selectButton svg{display:none}.libraryTools #selectionBar{gap:5px}.libraryTools #selectionBar button{padding:8px}}
+@media(max-width:400px){.filterRow{gap:4px}.filterRow .filters{width:auto}.filterRow .filters button{min-width:44px;padding:4px 8px}.libraryActions{gap:2px}.libraryActions button{padding:8px}}
+@media(max-width:360px){.filterRow .filters button{padding:4px 6px}.libraryActions button{padding:7px}.libraryActions .selectButton svg,.libraryActions .clearButton svg{display:none}.libraryTools #selectionBar{gap:5px}.libraryTools #selectionBar button{padding:8px}}
