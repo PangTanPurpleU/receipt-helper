@@ -77,19 +77,10 @@ progress::-moz-progress-bar{background:var(--action)}
 .filters{display:flex;align-items:center;gap:2px;background:var(--soft);padding:3px;border-radius:14px;flex-shrink:0;width:max-content}
 .filters button{min-height:44px;min-width:54px;padding:4px 13px;border-radius:11px;color:var(--muted);font-size:12px;white-space:nowrap}
 .filters button[aria-pressed=true]{background:var(--surface);color:var(--ink);font-weight:550;box-shadow:0 2px 6px #00000010}
-.libraryActions{display:flex;align-items:center;gap:4px}
-.libraryActions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;min-width:44px;padding:8px 10px;border-radius:12px;font-size:12px;white-space:nowrap}
-.libraryActions svg{width:17px;height:17px}
-.clearButton{color:var(--red);background:var(--redWash);border:1px solid var(--red)}
-.selectButton{color:var(--accent);background:var(--surface);border:1px solid var(--line)}
-.selectButton.selected{background:var(--wash);border-color:var(--accent)}
 #selectionBar{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:10px 0 0;font-size:12px}
 #selectedCount{margin:0 auto 0 4px;color:var(--muted);white-space:nowrap}
 #selectionBar button{min-height:44px;font-size:12px;padding:8px 12px;border-radius:12px;background:var(--wash);color:var(--accent);white-space:nowrap}
 #selectionBar #deleteSelected{background:var(--redWash);color:var(--red)}
-.search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 6px 0 14px;margin-bottom:18px}
-.search input{min-width:0;width:100%;border:0;outline:0;background:transparent;color:inherit;font-size:16px;padding:12px 0}
-.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--wash)}
 .receipt{display:flex;align-items:center;gap:16px;width:100%;min-width:0;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px #00000002}
 .receiptMark{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:13px;background:var(--greenWash);color:var(--green)}
 .receiptMark.duplicate{background:var(--redWash);color:var(--red)}
@@ -167,7 +158,7 @@ pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
 dialog{transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete,overlay 160ms allow-discrete}
 dialog:not([open]){opacity:0;transform:scale(.98)}
 @starting-style{.menu{opacity:0;transform:translateY(-4px) scale(.98)}dialog[open]{opacity:0;transform:scale(.98)}}
-@media(hover:hover) and (pointer:fine){.menu button:hover,.icon:hover,.secondary:hover,.libraryActions button:hover{background:var(--soft)}.primary:hover{background:#0064c8}.receipt:hover{border-color:#b9c4d2}}
+@media(hover:hover) and (pointer:fine){.menu button:hover,.icon:hover,.secondary:hover{background:var(--soft)}.primary:hover{background:#0064c8}.receipt:hover{border-color:#b9c4d2}}
 @media(max-width:600px){
  header{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-top:max(20px,env(safe-area-inset-top));gap:8px}
  .brand{font-size:17px;gap:9px}.brand img{width:36px;height:36px;border-radius:10px}nav{gap:2px}.menu{right:16px}
@@ -178,7 +169,7 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
  .modelCard{padding:18px;border-radius:20px;grid-template-columns:minmax(0,1fr);gap:12px}.modelControls{grid-column:1;grid-row:auto;flex-direction:row;justify-content:flex-start;flex-wrap:wrap;gap:8px 12px}.modelPrivacy{margin-left:auto}
  .modelCard[data-state=ready]{padding:10px 12px;gap:6px}.modelCard[data-state=ready] .modelControls{flex-wrap:nowrap}.modelCard[data-state=ready] .secondary{padding:8px 6px}
  .libraryHead{padding:12px 0;margin-bottom:8px}.libraryHead h2{font-size:18px}.importButton{font-size:13px;padding:10px 14px}
- .filters button{min-width:46px;padding:4px 10px}.libraryActions button{padding:8px}.libraryActions{gap:2px}
+ .filters button{min-width:46px;padding:4px 10px}
  .receipt{gap:12px;padding:18px 14px;border-radius:20px}.receiptMark{width:36px;height:36px;border-radius:12px}.receiptMark svg{width:19px;height:19px}
  .receiptTitle strong{font-size:14px}.receiptTitle b{font-size:17px}.receiptMeta{flex-direction:column;gap:2px;font-size:11px}.receiptStatus{gap:6px}.badge{font-size:10px}.warning{font-size:11px}.receipt>svg{display:none}
  .empty{padding:34px 16px}.detailGrid{grid-template-columns:1fr;gap:22px}.receiptPhoto{max-height:440px;object-fit:contain;background:var(--bg)}#detail{padding:20px;max-height:90dvh}.detailActions{justify-content:space-between}#info{padding:24px}
@@ -188,7 +179,7 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
  header{padding-left:16px;padding-right:12px}.brand{font-size:15px;gap:8px}.brand img{width:32px;height:32px}.icon{width:40px}main{padding-left:16px;padding-right:16px}
  h1{font-size:27px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));padding:20px;gap:16px}.stats>div:first-child{grid-column:1/-1;padding-bottom:16px;border-bottom:1px solid var(--line)}.stats>div:first-child strong{font-size:34px}.stats>div:nth-child(2){border-left:0;padding-left:0}
  .modelCard[data-state=ready] .modelStatus{font-size:12px}.modelReadyHint{font-size:10px}
- .filterRow{gap:4px}.filters button{min-width:44px;padding:4px 7px}.libraryActions .selectButton svg,.libraryActions .clearButton svg{display:none}.libraryActions button{padding:7px}
+ .filterRow{gap:4px}.filters button{min-width:44px;padding:4px 7px}
  #selectionBar{gap:5px}#selectionBar button{padding:8px}.libraryHead h2{font-size:16px}.importButton{padding:10px 12px;font-size:12px}
 }
 @media(prefers-color-scheme:dark){
@@ -200,31 +191,33 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
 @media(prefers-contrast:more) and (prefers-color-scheme:dark){:root{--muted:#d1d1d6;--line:#929299}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
-/* One persistent search control expands into the same toolbar position. */
-.searchControl{position:relative;flex-shrink:0;width:44px;height:44px}
-.searchSurface{position:absolute;inset:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;transform-origin:top left;pointer-events:none}
-.searchGlyph{position:absolute;left:12px;top:12px;width:20px;height:20px;color:var(--accent);pointer-events:none;transform-origin:top left;z-index:1}
-.searchGlyph svg{width:20px;height:20px}
-.libraryActions .searchToggle{position:absolute;inset:0;padding:0;width:100%;height:100%;background:transparent}
-.searchControl #searchWrap{position:relative;height:44px}
-.searchControl .search{height:44px;margin:0;padding:0 2px 0 42px;border:0;background:transparent}
-.searchControl .search input{padding:10px 0;outline:0}
-.searchControl .search input::-webkit-search-cancel-button{-webkit-appearance:none}
-.searchControl #searchClose{width:44px;padding:0;min-width:44px;color:var(--muted)}
-.searchControl:focus-within .searchSurface{border-color:var(--accent);box-shadow:0 0 0 2px var(--wash)}
-.libraryTools[data-search=open] .filters,.libraryTools[data-search=open] .clearButton,.libraryTools[data-search=open] .selectButton{display:none}
-.libraryTools[data-search=open] .libraryActions,.libraryTools[data-search=open] .searchControl{width:100%}
-@media(max-width:600px){.filterRow{gap:6px}.filterRow .filters button{min-width:44px;padding:4px 8px}.libraryActions{gap:4px}.libraryActions button{padding:8px}.libraryActions .clearButton svg{display:none}.libraryActions .selectButton svg{display:none}}
-@media(hover:hover) and (pointer:fine){.libraryActions .clearButton:hover{background:var(--redWash)}.libraryActions .searchToggle:hover{background:transparent}}
-
-.searchControl .search:focus-within{box-shadow:none}
-@media(max-width:360px){.filterRow{gap:4px}.filterRow .filters button{padding:4px 5px;min-width:44px}.libraryActions{gap:2px}.libraryActions button{padding:7px}}
-
-/* Two matching text controls; selection starts on the receipt itself. */
-.searchControl{width:68px}
-.searchControl .searchToggle{font-size:12px;color:var(--ink)}
-.searchGlyph{opacity:0}
-.libraryTools[data-search=open] .searchGlyph{opacity:1}
-.libraryActions .clearButton{width:68px;min-width:68px;padding:8px;background:var(--surface);border-color:var(--red);border-radius:12px;color:var(--red)}
-.selectionHint{margin:8px 4px 0;color:var(--muted);font-size:11px;line-height:1.5}
+.selectionHint{margin:6px 4px 0;color:var(--muted);font-size:11px;line-height:1.5}
 .receipt{-webkit-touch-callout:none}
+
+/* Consistent gutters, a clearer more button and a quieter introduction. */
+:root{--page-inset:32px;--ease-in-out:cubic-bezier(.77,0,.175,1)}
+header,main{padding-left:max(var(--page-inset),env(safe-area-inset-left));padding-right:max(var(--page-inset),env(safe-area-inset-right))}
+.menu{right:max(var(--page-inset),env(safe-area-inset-right))}
+#moreToggle{width:44px;min-width:44px;height:44px;color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 8px #00000006}
+#moreToggle svg{width:24px;height:24px}
+.intro{padding:26px 0 22px}
+.introContent{transform-origin:left top}
+h1{font-size:38px;margin:8px 0 10px}
+.eyebrow{font-size:11px}.intro p{font-size:13px}
+.stats{padding:28px;border-radius:28px;box-shadow:0 6px 28px #00000005}
+.stats>div:first-child strong{font-size:44px}
+.modelCard[data-state=ready]{min-height:32px;margin-top:8px;padding:6px;background:transparent;border:0;border-radius:0}
+.modelCard[data-state=ready] .modelStatus{font-size:11px;font-weight:500;color:var(--muted)}
+.modelCard[data-state=ready] .modelReadyHint{display:none}
+.modelCard[data-state=ready] .statusLight{animation:status-breathe 2.4s var(--ease-in-out) infinite}
+.library{margin-top:14px}.libraryTools{margin-bottom:14px}
+.receipt{transition:transform 140ms var(--ease-out),background-color 150ms ease,border-color 150ms ease}
+.receipt:active:not(:disabled){transform:scale(.985)}
+#moreToggle:active:not(:disabled){transform:scale(.94)}
+@keyframes status-breathe{0%,100%{opacity:.78;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
+@media(max-width:600px){:root{--page-inset:20px}.intro{padding:24px 0 20px}h1{font-size:28px}.intro p{font-size:12px}.stats{padding:24px 18px;gap:14px;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.95fr))}.stats>div:first-child strong{font-size:32px}.stats strong{font-size:26px}.modelCard[data-state=ready]{padding:6px;min-height:32px}.filters button{padding:4px 12px}.receipt{padding:20px 16px}}
+@media(max-width:360px){:root{--page-inset:16px}h1{font-size:25px}.stats{padding:22px;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.stats>div:first-child strong{font-size:38px}.stats>div:first-child{grid-column:1/-1}.stats>div:nth-child(2){border-left:0;padding-left:0}}
+@media(prefers-reduced-motion:reduce){.introContent{transform:none!important;opacity:1!important}}
+
+.stats small{white-space:nowrap}
+@media(min-width:361px) and (max-width:600px){.stats>div:first-child #total[data-size=compact]{font-size:28px}.stats>div:first-child #total[data-size=dense]{font-size:24px}}
