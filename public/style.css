@@ -68,11 +68,11 @@ progress::-webkit-progress-value{background:var(--action)}
 progress::-moz-progress-bar{background:var(--action)}
 .library{margin-top:26px}
 .libraryHead{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:calc(8px + env(safe-area-inset-top,0px)) max(var(--page-inset),env(safe-area-inset-right)) 8px max(var(--page-inset),env(safe-area-inset-left));margin-left:calc(-1 * max(var(--page-inset),env(safe-area-inset-left)));margin-right:calc(-1 * max(var(--page-inset),env(safe-area-inset-right)));margin-bottom:4px;background:var(--bg);border-radius:0}
-.libraryHead h2{min-width:0}
+.libraryHead h2{min-width:0;font-size:21px;line-height:1.25}
 
 .primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--action);color:#fff;border-radius:14px;font-size:14px;font-weight:550;padding:11px 20px;min-height:44px}
-.importButton{border-radius:13px;font-size:14px;padding:11px 17px;white-space:nowrap}
-.importButton svg{width:19px;height:19px}
+.importButton{border-radius:12px;font-size:14px;line-height:1.25;gap:6px;padding:8px 12px;white-space:nowrap}
+.importButton svg{width:17px;height:17px}
 .libraryTools{margin-bottom:18px}
 .filterRow{min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .filters{display:flex;align-items:center;gap:2px;background:var(--soft);padding:3px;border-radius:14px;flex-shrink:0;width:max-content}
@@ -169,7 +169,7 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
  .stats small{font-size:11px}.stats strong{font-size:26px}.stats>div:first-child strong{font-size:28px}.stats span{font-size:10px}.stats>div+div{padding-left:14px}
  .modelCard{padding:18px;border-radius:20px;grid-template-columns:minmax(0,1fr);gap:12px}.modelControls{grid-column:1;grid-row:auto;flex-direction:row;justify-content:flex-start;flex-wrap:wrap;gap:8px 12px}.modelPrivacy{margin-left:auto}
  .modelCard[data-state=ready]{padding:10px 12px;gap:6px}.modelCard[data-state=ready] .modelControls{flex-wrap:nowrap}.modelCard[data-state=ready] .secondary{padding:8px 6px}
- .libraryHead{padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;margin-bottom:4px}.libraryHead h2{font-size:18px}.importButton{font-size:13px;padding:10px 14px}
+ .libraryHead{padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;margin-bottom:4px}.libraryHead h2{font-size:20px}.importButton{font-size:14px;padding:8px 12px}
  .filters button{min-width:46px;padding:4px 10px}
  .receipt{gap:12px;padding:18px 14px;border-radius:20px}.receiptMark{width:36px;height:36px;border-radius:12px}.receiptMark svg{width:19px;height:19px}
  .receiptTitle strong{font-size:14px}.receiptTitle b{font-size:17px}.receiptMeta{flex-direction:column;gap:2px;font-size:11px}.receiptStatus{gap:6px}.badge{font-size:10px}.warning{font-size:11px}.receipt>svg{display:none}
@@ -181,7 +181,7 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
  h1{font-size:27px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));padding:20px;gap:16px}.stats>div:first-child{grid-column:1/-1;padding-bottom:16px;border-bottom:1px solid var(--line)}.stats>div:first-child strong{font-size:34px}.stats>div:nth-child(2){border-left:0;padding-left:0}
  .modelCard[data-state=ready] .modelStatus{font-size:12px}.modelReadyHint{font-size:10px}
  .filterRow{gap:4px}.filters button{min-width:44px;padding:4px 7px}
- #selectionBar{gap:5px}#selectionBar button{padding:8px}.libraryHead h2{font-size:16px}.importButton{padding:10px 12px;font-size:12px}
+ #selectionBar{gap:5px}#selectionBar button{padding:8px}.libraryHead h2{font-size:19px}.importButton{padding:8px 10px;font-size:13px}
 }
 @media(prefers-color-scheme:dark){
  :root{--bg:#0d0d0f;--surface:#1c1c1e;--ink:#f5f5f7;--muted:#a1a1a8;--line:#343437;--accent:#75b7ff;--wash:#152b45;--soft:#29292d;--green:#89d5a6;--greenWash:#193325;--red:#ffb0a9;--redWash:#3e2427;--amber:#efd092;--amberWash:#372f20;--glass:rgba(13,13,15,.93);--shadow:0 2px 16px #00000014}
@@ -207,8 +207,8 @@ h1{font-size:38px;line-height:1.16;margin:0 0 5px}
 .intro p{font-size:12px;line-height:1.5}
 .stats{padding:28px;border-radius:28px;box-shadow:0 6px 28px #00000005}
 .stats>div:first-child strong{font-size:44px}
-.modelCard[data-state=ready]{min-height:28px;margin-top:6px;padding:4px 6px;background:transparent;border:0;border-radius:0}
-.modelCard[data-state=ready] .modelStatus{font-size:11px;font-weight:500;color:var(--muted)}
+.modelCard[data-state=ready]{width:fit-content;max-width:100%;min-height:36px;margin-top:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.modelCard[data-state=ready] .modelStatus{font-size:12px;font-weight:500;color:var(--ink)}
 .modelCard[data-state=ready] .modelReadyHint{display:none}
 .modelCard[data-state=ready] .statusLight{animation:status-breathe 2.4s var(--ease-in-out) infinite}
 .library{margin-top:4px}.libraryTools{margin-bottom:10px}
@@ -216,7 +216,7 @@ h1{font-size:38px;line-height:1.16;margin:0 0 5px}
 .receipt:active:not(:disabled){transform:scale(.985)}
 #moreToggle:active:not(:disabled){transform:scale(.94)}
 @keyframes status-breathe{0%,100%{opacity:.78;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
-@media(max-width:600px){:root{--page-inset:24px}.intro{padding:14px 0}h1{font-size:28px}.intro p{font-size:11px}.stats{padding:24px 18px;gap:14px;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.95fr))}.stats>div:first-child strong{font-size:32px}.stats strong{font-size:26px}.modelCard[data-state=ready]{padding:4px 6px;min-height:28px}.filters button{padding:4px 12px}.receipt{padding:20px 16px}}
+@media(max-width:600px){:root{--page-inset:24px}.intro{padding:14px 0}h1{font-size:28px}.intro p{font-size:11px}.stats{padding:24px 18px;gap:14px;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.95fr))}.stats>div:first-child strong{font-size:32px}.stats strong{font-size:26px}.modelCard[data-state=ready]{padding:8px 12px;min-height:36px}.filters button{padding:4px 12px}.receipt{padding:20px 16px}}
 @media(max-width:360px){:root{--page-inset:20px}h1{font-size:25px}.stats{padding:22px;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.stats>div:first-child strong{font-size:38px}.stats>div:first-child{grid-column:1/-1}.stats>div:nth-child(2){border-left:0;padding-left:0}}
 @media(prefers-reduced-motion:reduce){.introContent{transform:none!important;opacity:1!important}}
 
