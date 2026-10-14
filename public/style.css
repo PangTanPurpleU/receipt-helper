@@ -71,8 +71,8 @@ progress::-moz-progress-bar{background:var(--action)}
 .libraryHead h2{min-width:0;font-size:21px;line-height:1.25}
 
 .primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--action);color:#fff;border-radius:14px;font-size:14px;font-weight:550;padding:11px 20px;min-height:44px}
-.importButton{background:var(--wash);color:var(--accent);border-radius:12px;font-size:14px;line-height:1.25;gap:5px;padding:8px 10px;white-space:nowrap;box-shadow:none}
-.importButton svg{width:16px;height:16px}
+.importButton{background:var(--action);color:#fff;border-radius:14px;min-height:48px;font-size:15px;font-weight:600;line-height:1.25;gap:7px;padding:12px 18px;white-space:nowrap;box-shadow:0 3px 10px #0071e31a}
+.importButton svg{width:19px;height:19px}
 .libraryTools{margin-bottom:18px}
 .filterRow{min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .filters{display:flex;align-items:center;gap:2px;background:var(--soft);padding:3px;border-radius:14px;flex-shrink:0;width:max-content}
@@ -159,7 +159,7 @@ pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
 dialog{transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete,overlay 160ms allow-discrete}
 dialog:not([open]){opacity:0;transform:scale(.98)}
 @starting-style{.menu{opacity:0;transform:translateY(-4px) scale(.98)}dialog[open]{opacity:0;transform:scale(.98)}}
-@media(hover:hover) and (pointer:fine){.menu button:hover,.icon:hover,.secondary:hover{background:var(--soft)}.primary:hover{background:#0064c8}.importButton:hover{background:var(--wash)}.receipt:hover{border-color:#b9c4d2}}
+@media(hover:hover) and (pointer:fine){.menu button:hover,.icon:hover,.secondary:hover{background:var(--soft)}.primary:hover{background:#0064c8}.importButton:hover{background:#0064c8}.receipt:hover{border-color:#b9c4d2}}
 @media(max-width:600px){
  header{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-top:max(20px,env(safe-area-inset-top));gap:8px}
  .brand{font-size:17px;gap:9px}.brand img{width:36px;height:36px;border-radius:10px}nav{gap:2px}.menu{right:16px}
@@ -169,7 +169,7 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
  .stats small{font-size:11px}.stats strong{font-size:26px}.stats>div:first-child strong{font-size:28px}.stats span{font-size:10px}.stats>div+div{padding-left:14px}
  .modelCard{padding:18px;border-radius:20px;grid-template-columns:minmax(0,1fr);gap:12px}.modelControls{grid-column:1;grid-row:auto;flex-direction:row;justify-content:flex-start;flex-wrap:wrap;gap:8px 12px}.modelPrivacy{margin-left:auto}
  .modelCard[data-state=ready]{padding:10px 12px;gap:6px}.modelCard[data-state=ready] .modelControls{flex-wrap:nowrap}.modelCard[data-state=ready] .secondary{padding:8px 6px}
- .libraryHead{padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;margin-bottom:4px}.libraryHead h2{font-size:20px}.importButton{font-size:13px;padding:8px 10px}
+ .libraryHead{padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;margin-bottom:4px}.libraryHead h2{font-size:20px}.importButton{font-size:15px;padding:12px 16px}
  .filters button{min-width:46px;padding:4px 10px}
  .receipt{gap:12px;padding:18px 14px;border-radius:20px}.receiptMark{width:36px;height:36px;border-radius:12px}.receiptMark svg{width:19px;height:19px}
  .receiptTitle strong{font-size:14px}.receiptTitle b{font-size:17px}.receiptMeta{flex-direction:column;gap:2px;font-size:11px}.receiptStatus{gap:6px}.badge{font-size:10px}.warning{font-size:11px}.receipt>svg{display:none}
@@ -181,7 +181,7 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
  h1{font-size:27px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));padding:20px;gap:16px}.stats>div:first-child{grid-column:1/-1;padding-bottom:16px;border-bottom:1px solid var(--line)}.stats>div:first-child strong{font-size:34px}.stats>div:nth-child(2){border-left:0;padding-left:0}
  .modelCard[data-state=ready] .modelStatus{font-size:12px}.modelReadyHint{font-size:10px}
  .filterRow{gap:4px}.filters button{min-width:44px;padding:4px 7px}
- #selectionBar{gap:5px}#selectionBar button{padding:8px}.libraryHead h2{font-size:19px}.importButton{padding:8px 10px;font-size:13px}
+ #selectionBar{gap:5px}#selectionBar button{padding:8px}.libraryHead h2{font-size:19px}.importButton{padding:12px;font-size:14px}
 }
 @media(prefers-color-scheme:dark){
  :root{--bg:#0d0d0f;--surface:#1c1c1e;--ink:#f5f5f7;--muted:#a1a1a8;--line:#343437;--accent:#75b7ff;--wash:#152b45;--soft:#29292d;--green:#89d5a6;--greenWash:#193325;--red:#ffb0a9;--redWash:#3e2427;--amber:#efd092;--amberWash:#372f20;--glass:rgba(13,13,15,.93);--shadow:0 2px 16px #00000014}
