@@ -1,8 +1,8 @@
-const SHELL=__SHELL_CACHE__,MODEL_CACHE='receipt-ocr-v5-v1',ASSETS=__OCR_ASSETS__;
+const SHELL=__SHELL_CACHE__,MODEL_CACHE='receipt-ocr-v5-v1',ASSETS=__OCR_ASSETS__,MODEL_VERSION=__OCR_VERSION__;
 const absolute=p=>new URL(p,self.registration.scope).href;
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(SHELL);await c.addAll(['','app.js','style.css','icon.png','manifest.webmanifest'].map(absolute));await self.skipWaiting();})()));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{await self.clients.claim();await Promise.all((await caches.keys()).filter(k=>k.startsWith('receipt-shell-')&&k!==SHELL).map(k=>caches.delete(k)));/* Legacy receipt-pages caches are kept until the page verifies and migrates their model resources. */})()));
-self.addEventListener('message',e=>{if(e.data==='model-cache-version')e.ports[0]?.postMessage(MODEL_CACHE);});
+self.addEventListener('message',e=>{if(e.data==='model-cache-version')e.ports[0]?.postMessage(MODEL_CACHE+':'+MODEL_VERSION);});
 self.addEventListener('fetch',e=>{
  const request=e.request;if(request.method!=='GET'||new URL(request.url).origin!==self.location.origin)return;
  const asset=ASSETS.find(a=>absolute(a.path)===request.url);

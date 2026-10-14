@@ -1,6 +1,6 @@
 import {parseReceipt,orderedLines,validOrder,amountCents,dateValue,transfer} from './core.js';
 let worker,engine,current,initialization,id=0,pending=new Map();
-export const MODEL_NAMES={'paddle-v5':'PaddleOCR v5 中文','paddle-v6':'PaddleOCR v6 中文','tess-best':'Tesseract 高精度','tess-fast':'Tesseract 快速'};
+export const MODEL_NAMES={'paddle-v5':'PaddleOCR v5 中文','paddle-v6':'PaddleOCR v6 small 中文','paddle-v6-tiny':'PaddleOCR v6 tiny 中文','tess-best':'Tesseract 高精度','tess-fast':'Tesseract 快速'};
 export async function initialize(model='paddle-v5',progress=()=>{}){
  if(current===model&&engine)return;
  progress('正在启动本地识别引擎…');

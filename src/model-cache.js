@@ -1,4 +1,4 @@
-import {MODEL_ASSETS} from './model-assets.js';
+import {MODEL_ASSETS,MODEL_PACKS} from './model-assets.js';
 
 export const MODEL_CACHE='receipt-ocr-v5-v1';
 const fingerprint=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
@@ -59,3 +59,9 @@ export function createModelStore({assets,baseURL,cacheStorage=globalThis.caches,
  return {inspect,download,total};
 }
 export const modelStore=createModelStore({assets:MODEL_ASSETS,baseURL:new URL('./',import.meta.url)});
+const stores=new Map([['paddle-v5',modelStore]]);
+export function getModelStore(model){
+ if(!MODEL_PACKS[model])throw new Error('不支持的本地识别模型');
+ if(!stores.has(model))stores.set(model,createModelStore({assets:MODEL_PACKS[model],baseURL:new URL('./',import.meta.url)}));
+ return stores.get(model);
+}

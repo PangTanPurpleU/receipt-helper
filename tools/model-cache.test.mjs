@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createModelStore,MODEL_CACHE} from '../src/model-cache.js';
+import {MODEL_PACKS,MODEL_ASSETS} from '../src/model-assets.js';
+import {LOCAL_MODELS,localModel} from '../src/models.js';
 const sha=b=>createHash('sha256').update(b instanceof ArrayBuffer?new Uint8Array(b):b).digest('hex');
 class MemoryCaches{
  constructor(){this.stores=new Map();}
@@ -16,3 +18,25 @@ test('cancelling preserves complete files; retry downloads only remaining resour
 test('cache eviction and changed fingerprints are detected on the next check',async()=>{const f=fixture();await f.store.download();const cache=await f.cacheStorage.open(MODEL_CACHE);await cache.delete(f.calls[0]);assert.equal((await f.store.inspect()).ready,false);await f.store.download();f.assets[1].sha256='new-version';assert.equal((await f.store.inspect()).ready,false);});
 test('old app cache migrates only matching bytes, then model cache survives shell removal',async()=>{const f=fixture(),old=await f.cacheStorage.open('receipt-pages-v1');await old.put('https://test.invalid/subpath/asset-0',new Response(f.data[0]));await old.put('https://test.invalid/subpath/asset-1',new Response('broken'));assert.equal((await f.store.inspect({migrate:true})).bytes,f.assets[0].bytes);f.cacheStorage.stores.delete('receipt-pages-v1');await f.store.download();assert.equal(f.calls.length,1);assert.equal((await f.store.inspect()).ready,true);});
 test('storage write failure stays unavailable and concurrent downloads share one operation',async()=>{const f=fixture(),a=f.store.download(),b=f.store.download();assert.equal(a,b);await a;assert.equal(f.calls.length,2);const g=fixture(),cache=await g.cacheStorage.open(MODEL_CACHE);cache.put=async()=>{throw new DOMException('full','QuotaExceededError');};await assert.rejects(g.store.download(),{name:'QuotaExceededError'});assert.equal((await g.store.inspect()).ready,false);});
+
+test('model packs include only their own models plus identical shared runtime',()=>{
+ assert.deepEqual(MODEL_ASSETS,MODEL_PACKS['paddle-v5']);
+ const shared=MODEL_ASSETS.filter(a=>!a.path.startsWith('models/'));
+ for(const model of LOCAL_MODELS){
+  const assets=MODEL_PACKS[model.id];assert.equal(assets.length,5);
+  assert.deepEqual(assets.filter(a=>a.path.startsWith('models/')).map(a=>a.path),['_det.tar','_rec.tar'].map(suffix=>'models/'+model.prefix+suffix));
+  assert.deepEqual(assets.filter(a=>!a.path.startsWith('models/')),shared);
+  assert.ok(assets.every(a=>a.bytes>0&&/^[a-f0-9]{64}$/.test(a.sha256)));
+ }
+ assert.throws(()=>localModel('unknown'),/不支持/);
+});
+test('switching model preserves cached models and downloads shared runtime once',async()=>{
+ const bodies={v5:new TextEncoder().encode('five'),v6:new TextEncoder().encode('six'),runtime:new TextEncoder().encode('shared')};
+ const manifest=name=>({path:name,bytes:bodies[name].length,sha256:sha(bodies[name])});
+ const cacheStorage=new MemoryCaches(),calls=[];
+ const store=names=>createModelStore({assets:names.map(manifest),baseURL:'https://test.invalid/',cacheStorage,digest:sha,fetcher:async url=>{const name=new URL(url).pathname.slice(1);calls.push(name);return new Response(bodies[name]);}});
+ const v5=store(['v5','runtime']),v6=store(['v6','runtime']);
+ await v5.download();assert.equal((await v6.inspect()).ready,false);
+ await v6.download();assert.deepEqual(calls,['v5','runtime','v6']);
+ assert.equal((await v5.inspect()).ready,true);assert.equal((await v6.inspect()).ready,true);
+});
