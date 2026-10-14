@@ -201,10 +201,10 @@ header,main{padding-left:max(var(--page-inset),env(safe-area-inset-left));paddin
 .menu{right:max(var(--page-inset),env(safe-area-inset-right))}
 #moreToggle{width:44px;min-width:44px;height:44px;color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 8px #00000006}
 #moreToggle svg{width:24px;height:24px}
-.intro{padding:26px 0 22px}
+.intro{padding:18px 0 16px}
 .introContent{transform-origin:left top}
-h1{font-size:38px;margin:8px 0 10px}
-.eyebrow{font-size:11px}.intro p{font-size:13px}
+h1{font-size:26px;line-height:1.25;margin:0 0 5px}
+.intro p{font-size:12px;line-height:1.5}
 .stats{padding:28px;border-radius:28px;box-shadow:0 6px 28px #00000005}
 .stats>div:first-child strong{font-size:44px}
 .modelCard[data-state=ready]{min-height:32px;margin-top:8px;padding:6px;background:transparent;border:0;border-radius:0}
@@ -216,8 +216,8 @@ h1{font-size:38px;margin:8px 0 10px}
 .receipt:active:not(:disabled){transform:scale(.985)}
 #moreToggle:active:not(:disabled){transform:scale(.94)}
 @keyframes status-breathe{0%,100%{opacity:.78;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
-@media(max-width:600px){:root{--page-inset:20px}.intro{padding:24px 0 20px}h1{font-size:28px}.intro p{font-size:12px}.stats{padding:24px 18px;gap:14px;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.95fr))}.stats>div:first-child strong{font-size:32px}.stats strong{font-size:26px}.modelCard[data-state=ready]{padding:6px;min-height:32px}.filters button{padding:4px 12px}.receipt{padding:20px 16px}}
-@media(max-width:360px){:root{--page-inset:16px}h1{font-size:25px}.stats{padding:22px;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.stats>div:first-child strong{font-size:38px}.stats>div:first-child{grid-column:1/-1}.stats>div:nth-child(2){border-left:0;padding-left:0}}
+@media(max-width:600px){:root{--page-inset:20px}.intro{padding:14px 0}h1{font-size:22px}.intro p{font-size:11px}.stats{padding:24px 18px;gap:14px;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.95fr))}.stats>div:first-child strong{font-size:32px}.stats strong{font-size:26px}.modelCard[data-state=ready]{padding:6px;min-height:32px}.filters button{padding:4px 12px}.receipt{padding:20px 16px}}
+@media(max-width:360px){:root{--page-inset:16px}h1{font-size:21px}.stats{padding:22px;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.stats>div:first-child strong{font-size:38px}.stats>div:first-child{grid-column:1/-1}.stats>div:nth-child(2){border-left:0;padding-left:0}}
 @media(prefers-reduced-motion:reduce){.introContent{transform:none!important;opacity:1!important}}
 
 .stats small{white-space:nowrap}
