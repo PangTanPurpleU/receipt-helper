@@ -20,12 +20,13 @@ nav{display:flex;gap:4px;color:var(--muted)}
 nav .icon{background:var(--surface);box-shadow:0 1px 4px #00000004}
 .menu{position:absolute;right:32px;top:calc(100% + 12px);z-index:6;min-width:236px;background:var(--surface);border:1px solid var(--line);box-shadow:0 14px 50px #00000018;border-radius:18px;padding:6px;transform-origin:top right}
 .menu button{display:flex;width:100%;align-items:center;gap:12px;border-radius:12px;padding:10px 14px;text-align:left;font-size:14px}
-.menu button svg{color:var(--muted);width:20px;height:20px}
+.menuGroup+.menuGroup{border-top:1px solid var(--line);margin-top:5px;padding-top:5px}
+.menu button:focus-visible{outline:0;background:var(--wash);color:var(--accent)}
 main{max-width:1000px;margin:auto;padding:0 32px calc(36px + env(safe-area-inset-bottom))}
 .intro{padding:38px 0 26px}
 .eyebrow{font-size:12px;color:var(--muted);letter-spacing:.02em;font-weight:500}
 h1{font-size:42px;line-height:1.16;letter-spacing:-.04em;font-weight:650;margin:10px 0 14px}
-h1 span{color:var(--muted)}
+h1 span{color:inherit}
 .intro p{margin:0;color:var(--muted);font-size:14px;line-height:1.6}
 h2{font-size:19px;font-weight:600;letter-spacing:-.025em;margin:0}
 h2 span{font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;margin-left:7px}
@@ -56,7 +57,7 @@ h2 span{font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;margi
 .modelCard[data-state=ready]{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;min-height:68px;border-radius:18px;box-shadow:none}
 .modelCard[data-state=ready] .modelGlyph,.modelCard[data-state=ready] h2,.modelCard[data-state=ready]>p,.modelCard[data-state=ready] .modelPrivacy{display:none}
 .modelCard[data-state=ready] .modelStatus{margin:0;font-size:13px;font-weight:550;color:var(--ink)}
-.modelCard[data-state=ready] .modelControls{gap:0}
+.modelCard[data-state=ready] .modelControls{display:none}
 .modelCard[data-state=ready] .secondary{min-width:44px;padding:8px;font-size:11px;background:transparent;color:var(--accent);gap:6px}
 .modelCard[data-state=ready] .secondary svg{width:14px;height:14px}
 .modelDownloadProgress{grid-column:1;display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -72,14 +73,14 @@ progress::-moz-progress-bar{background:var(--action)}
 .importButton{border-radius:13px;font-size:14px;padding:11px 17px;white-space:nowrap}
 .importButton svg{width:19px;height:19px}
 .libraryTools{margin-bottom:18px}
-.filterRow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.filterRow{min-height:50px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .filters{display:flex;align-items:center;gap:2px;background:var(--soft);padding:3px;border-radius:14px;flex-shrink:0;width:max-content}
 .filters button{min-height:44px;min-width:54px;padding:4px 13px;border-radius:11px;color:var(--muted);font-size:12px;white-space:nowrap}
 .filters button[aria-pressed=true]{background:var(--surface);color:var(--ink);font-weight:550;box-shadow:0 2px 6px #00000010}
 .libraryActions{display:flex;align-items:center;gap:4px}
 .libraryActions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;min-width:44px;padding:8px 10px;border-radius:12px;font-size:12px;white-space:nowrap}
 .libraryActions svg{width:17px;height:17px}
-.clearButton{color:var(--muted)}
+.clearButton{color:var(--red);background:var(--redWash);border:1px solid var(--red)}
 .selectButton{color:var(--accent);background:var(--surface);border:1px solid var(--line)}
 .selectButton.selected{background:var(--wash);border-color:var(--accent)}
 #selectionBar{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:10px 0 0;font-size:12px}
@@ -161,11 +162,11 @@ pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
 #progressPrivacy{font-size:12px;margin:22px 0 16px;color:var(--muted)}
 #progress #stop{width:100%;min-height:46px;padding:10px 16px;font-size:14px;font-weight:500;color:var(--ink);background:var(--soft);border-radius:13px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.menu,#searchWrap{transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete}
-.menu[hidden],#searchWrap[hidden]{opacity:0;transform:translateY(-4px) scale(.98)}
+.menu{transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete}
+.menu[hidden]{opacity:0;transform:translateY(-4px) scale(.98)}
 dialog{transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete,overlay 160ms allow-discrete}
 dialog:not([open]){opacity:0;transform:scale(.98)}
-@starting-style{.menu,#searchWrap{opacity:0;transform:translateY(-4px) scale(.98)}dialog[open]{opacity:0;transform:scale(.98)}}
+@starting-style{.menu{opacity:0;transform:translateY(-4px) scale(.98)}dialog[open]{opacity:0;transform:scale(.98)}}
 @media(hover:hover) and (pointer:fine){.menu button:hover,.icon:hover,.secondary:hover,.libraryActions button:hover{background:var(--soft)}.primary:hover{background:#0064c8}.receipt:hover{border-color:#b9c4d2}}
 @media(max-width:600px){
  header{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-top:max(20px,env(safe-area-inset-top));gap:8px}
@@ -198,3 +199,22 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
 @media(prefers-contrast:more){:root{--muted:#4a4a4f;--line:#8e8e93}.badge{border:1px solid currentColor}.libraryHead{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}}
 @media(prefers-contrast:more) and (prefers-color-scheme:dark){:root{--muted:#d1d1d6;--line:#929299}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* One persistent search control expands into the same toolbar position. */
+.searchControl{position:relative;flex-shrink:0;width:44px;height:44px}
+.searchSurface{position:absolute;inset:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;transform-origin:top left;pointer-events:none}
+.searchGlyph{position:absolute;left:12px;top:12px;width:20px;height:20px;color:var(--accent);pointer-events:none;transform-origin:top left;z-index:1}
+.searchGlyph svg{width:20px;height:20px}
+.libraryActions .searchToggle{position:absolute;inset:0;padding:0;width:100%;height:100%;background:transparent}
+.searchControl #searchWrap{position:relative;height:44px}
+.searchControl .search{height:44px;margin:0;padding:0 2px 0 42px;border:0;background:transparent}
+.searchControl .search input{padding:10px 0;outline:0}
+.searchControl .search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.searchControl #searchClose{width:44px;padding:0;min-width:44px;color:var(--muted)}
+.searchControl:focus-within .searchSurface{border-color:var(--accent);box-shadow:0 0 0 2px var(--wash)}
+.libraryTools[data-search=open] .filters,.libraryTools[data-search=open] .clearButton,.libraryTools[data-search=open] .selectButton{display:none}
+.libraryTools[data-search=open] .libraryActions,.libraryTools[data-search=open] .searchControl{width:100%}
+@media(max-width:600px){.filterRow{gap:6px}.filterRow .filters button{min-width:44px;padding:4px 8px}.libraryActions{gap:4px}.libraryActions button{padding:8px}.libraryActions .clearButton svg{display:none}.libraryActions .selectButton svg{display:none}}
+@media(hover:hover) and (pointer:fine){.libraryActions .clearButton:hover{background:var(--redWash)}.libraryActions .searchToggle:hover{background:transparent}}
+
+.searchControl .search:focus-within{box-shadow:none}
