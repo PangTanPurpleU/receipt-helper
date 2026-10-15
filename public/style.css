@@ -41,7 +41,7 @@ h2 span{font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;margi
 .modelCard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 24px;scroll-margin:24px;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 24px}
 .modelHeading{display:flex;align-items:center;gap:12px;grid-column:1;min-width:0}
 .modelHeading>div{min-width:0}
-.modelGlyph{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:12px;background:var(--wash);color:var(--accent);border:1px solid var(--line)}
+.modelGlyph{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;color:var(--ink);background:transparent;border:0}
 .modelHeading h2{font-size:15px;letter-spacing:-.01em}
 .modelStatus{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.5}
 .statusLight{height:7px;width:7px;border-radius:50%;flex-shrink:0;background:var(--red);box-shadow:0 0 0 3px var(--redWash)}
@@ -211,7 +211,7 @@ h1{font-size:38px;line-height:1.16;margin:0 0 5px}
 .modelCard[data-state=ready]{width:100%;min-height:56px;margin-top:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;justify-content:flex-start}
 .modelCard[data-state=ready] .modelHeading{width:100%;gap:10px}
 .modelCard[data-state=ready] .modelGlyph{width:30px;height:30px;border-radius:9px}
-.modelCard[data-state=ready] .modelGlyph svg{width:18px;height:18px;stroke-width:1.8}
+.modelCard[data-state=ready] .modelGlyph svg{width:20px;height:20px;stroke-width:1.8}
 .modelCard[data-state=ready] .modelHeading>div{display:flex;align-items:center;justify-content:space-between;flex:1;gap:8px}
 .modelCard[data-state=ready] h2{font-size:12px;font-weight:550;line-height:1.4;letter-spacing:0}
 .modelCard[data-state=ready] .modelStatus{flex-shrink:0;gap:5px;padding:4px 7px;border-radius:8px;font-size:10px;line-height:1.5;font-weight:500;color:var(--green);background:var(--greenWash)}
