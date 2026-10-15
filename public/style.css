@@ -1399,7 +1399,7 @@ main {
   height: 24px;
 }
 .intro {
-  padding: 18px 0 16px;
+  padding: 6px 0 16px;
 }
 .introContent {
   transform-origin: left top;
@@ -1514,7 +1514,7 @@ h1 {
     --page-inset: 24px;
   }
   .intro {
-    padding: 14px 0;
+    padding: 6px 0 14px;
   }
   h1 {
     font-size: 28px;
