@@ -186,7 +186,8 @@ dialog:not([open]){opacity:0;transform:scale(.98)}
 }
 @media(prefers-color-scheme:dark){
  :root{--bg:#0d0d0f;--surface:#1c1c1e;--ink:#f5f5f7;--muted:#a1a1a8;--line:#343437;--accent:#75b7ff;--wash:#152b45;--soft:#29292d;--green:#89d5a6;--greenWash:#193325;--red:#ffb0a9;--redWash:#3e2427;--amber:#efd092;--amberWash:#372f20;--glass:rgba(13,13,15,.93);--shadow:0 2px 16px #00000014}
- .modelCard[data-state=ready] .statusLight{background:#62cb88}.filters button[aria-pressed=true]{background:#444448}.receipt:hover{border-color:#5c5c63}
+ .modelCard[data-state=ready] .statusLight{background:#62cb88}.filters button[aria-pressed=true]{background:#444448}
+ @media(hover:hover) and (pointer:fine){.receipt:hover{border-color:#5c5c63}}
 }
 @media(prefers-reduced-transparency:reduce){.libraryHead{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}}
 @media(prefers-contrast:more){:root{--muted:#4a4a4f;--line:#8e8e93}.badge{border:1px solid currentColor}.libraryHead{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}}

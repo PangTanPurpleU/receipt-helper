@@ -1,3 +1,5 @@
+import {waitForOfflineRuntime} from './offline-runtime.js';
+import {requestPersistence,storageError,localDay} from './ui-utils.js';
 import {receiptTypes,isWechatScreenshot,isScreenshot} from './receipt-types.js';
 import {records,save,photo,remove,hash,backup,restoreZIP,openDB} from './storage.js';
 import {receiptFieldDefs,payee,summary,peerMap,filtered,parseReceipt,transfer} from './core.js';
@@ -12,7 +14,7 @@ import {createPageMotion} from './page-motion.js';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const paths={scanText:'M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8h8M7 12h10M7 16h6',search:'m21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',photo:'M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m-1 14 5-5 4 4 3-3 6 6M8 8h.01',download:'M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4',more:'M5 12h.01M12 12h.01M19 12h.01',check:'m5 12 4 4L19 6',close:'m6 6 12 12M6 18 18 6',trash:'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',export:'M12 16V3m-4 4 4-4 4 4M4 13v8h16v-8',arrow:'m9 5 7 7-7 7',shield:'M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3m-4 9 3 3 5-6',select:'M3 3h18v18H3z m4 9 3 3 7-7',repeat:'M4 8a9 9 0 0 1 15-3l2 3M21 3v5h-5M20 16a9 9 0 0 1-15 3l-2-3M3 21v-5h5'};
 const icon=n=>n==='more'?`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg>`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[n]}"/></svg>`;
-let rows=[],peers=new Map(),selected=new Set(),selection=false,filter='all',busy=false,cancel=false,urls=[],active=null,confirmAction=null,lastFocus;
+let rows=[],peers=new Map(),selected=new Set(),selection=false,filter='all',busy=false,cancel=false,urls=[],active=null,confirmAction=null,lastFocus,detailRequest=0;
 const model='paddle-v6-tiny';
 try{localStorage.setItem('receipt-ocr-model',model);}catch{}
 let modelStore=getModelStore(model);
@@ -37,18 +39,12 @@ function displayModel(state,error=''){
 async function checkModel(options){if(modelDownloading||modelChecking&&checkModel.running)return modelState;modelChecking=true;$('#downloadModel').disabled=true;
  checkModel.running=true;try{const state=await modelStore.inspect(options);if(options?.migrate)await pruneRetiredModels();displayModel(state);if(state.ready&&options?.migrate)await Promise.all((await caches.keys()).filter(k=>k.startsWith('receipt-pages-')).map(k=>caches.delete(k)));}catch(e){displayModel({...modelState,ready:false},e.message);}finally{modelChecking=false;checkModel.running=false;$('#downloadModel').disabled=busy||modelDownloading;}return modelState;
 }
-async function offlineRuntime(){
- const registration=await offlineRegistration;if(!registration)throw new Error('此浏览器无法启用本地模型缓存，请用 Safari 打开正式网址');
- await navigator.serviceWorker.ready;
- // Wait for the updated caching worker to take control; no page reload or photo upload.
- const usable=()=>new Promise(resolve=>{const worker=navigator.serviceWorker.controller;if(!worker){resolve(false);return;}const channel=new MessageChannel(),timer=setTimeout(()=>{channel.port1.close();resolve(false);},500);channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();resolve(e.data==='receipt-ocr-v5-v1:'+MODEL_VERSION);};worker.postMessage('model-cache-version',[channel.port2]);});
- const deadline=Date.now()+15000;while(!await usable()){if(Date.now()>deadline)throw new Error('本地缓存组件正在更新，请刷新网页后重试');await new Promise(r=>setTimeout(r,250));}
-}
+async function offlineRuntime(){await waitForOfflineRuntime(offlineRegistration,{serviceWorker:navigator.serviceWorker,version:'receipt-ocr-v5-v1:'+MODEL_VERSION});}
 async function requireModel(){if(modelDownloading){focusModel();toast('请等待模型下载完成');return false;}const s=await checkModel();if(!s.ready){await dispose();focusModel();toast('本地识别模型尚未完整下载，请先下载');return false;}try{await offlineRuntime();return true;}catch(e){toast(e.message);return false;}}
 $('#downloadModel').onclick=async()=>{
  if(busy||modelDownloading||modelState.ready)return;
  modelDownloading=true;modelAbort=new AbortController();displayModel(modelState);$('#cancelModel').disabled=false;let last=0;
- try{await offlineRuntime();await navigator.storage?.persist?.();const s=await modelStore.download({signal:modelAbort.signal,onProgress:p=>{if(performance.now()-last<100&&p.bytes!==p.total)return;last=performance.now();$('#modelProgress').value=Math.floor(p.bytes/p.total*100);$('#modelProgressText').textContent=`${Math.min(100,Math.floor(p.bytes/p.total*100))}% · ${(p.bytes/1024/1024).toFixed(1)} / ${(p.total/1024/1024).toFixed(1)} MB${p.stage==='verifying'?' · 校验中':''}`;}});modelDownloading=false;displayModel(s);toast('识别模型已下载，导入照片即可识别');}
+ try{await offlineRuntime();await requestPersistence();const s=await modelStore.download({signal:modelAbort.signal,onProgress:p=>{if(performance.now()-last<100&&p.bytes!==p.total)return;last=performance.now();$('#modelProgress').value=Math.floor(p.bytes/p.total*100);$('#modelProgressText').textContent=`${Math.min(100,Math.floor(p.bytes/p.total*100))}% · ${(p.bytes/1024/1024).toFixed(1)} / ${(p.total/1024/1024).toFixed(1)} MB${p.stage==='verifying'?' · 校验中':''}`;}});modelDownloading=false;displayModel(s);toast('识别模型已下载，导入照片即可识别');}
  catch(e){modelDownloading=false;let s;try{s=await modelStore.inspect();}catch{s={...modelState,ready:false};}displayModel(s,modelAbort.signal.aborted?'下载已取消，已保存的资源会保留，可继续下载。':e.name==='QuotaExceededError'?'浏览器存储空间不足，请释放设备空间后重试。':e.message);}
  finally{modelAbort=null;}
 };
@@ -73,27 +69,30 @@ function render(){const ids=new Set(rows.map(r=>r.id));for(const id of selected)
 }
 bindReceiptGestures($('#list'),{isBusy:()=>busy,isSelecting:()=>selection,enter:id=>{closeMenu();selected.add(id);render();},toggle:id=>{selected.has(id)?selected.delete(id):selected.add(id);render();},open:showDetail});
 function confirm(title,text,action,label='删除'){lastFocus=document.activeElement;confirmAction=action;$('#confirmTitle').textContent=title;$('#confirmText').textContent=text;$('#confirmOK').textContent=label;$('#confirm').showModal();}
-$('#confirmCancel').onclick=()=>$('#confirm').close();$('#confirm').onclose=()=>lastFocus?.focus();$('#confirmOK').onclick=async()=>{const action=confirmAction;$('#confirm').close();try{await action();}catch(e){toast(e.message);}};
-function closeDetail(){$('#detail').close();for(const u of urls)URL.revokeObjectURL(u);urls=[];active=null;}
-$('#detail').addEventListener('close',()=>{for(const u of urls)URL.revokeObjectURL(u);urls=[];active=null;});
-async function showDetail(id){const r=rows.find(r=>r.id===id);if(!r)return;active=id;const b=await photo(id);const u=b?URL.createObjectURL(b):'';urls.push(u);const duplicates=peers.get(id)||[];
- $('#detailBody').innerHTML=`<div class="dialogHeader"><div><small>${esc(r.name)}</small><h2>凭证详情</h2></div><button id="detailClose" class="icon" aria-label="关闭详情">${icon('close')}</button></div><div class="detailGrid"><div>${u?`<a href="${u}" target="_blank" rel="noopener"><img class="receiptPhoto" src="${u}" alt="原始凭证，点击放大"></a>`:''}</div><div><div class="notice ${r.warning?'warn':''}">${esc(r.warning||'关键信息已识别，请与原图核对。')}</div>${duplicates.length?`<div class="duplicateInfo"><strong>与 ${duplicates.length} 张凭证重复</strong>${duplicates.map(p=>`<p>${esc(rows.find(x=>x.id===p.id)?.name)}<br>${esc(p.reasons.join('、'))}</p>`).join('')}</div>`:''}<form id="edit"><label>凭证类型<select name="Type">${receiptTypes.map(t=>`<option ${r.fields.Type===t?'selected':''}>${t}</option>`).join('')}</select></label>${receiptFieldDefs(r.fields).map(([k,l])=>`<label>${l}<input name="${k}" value="${esc(r.fields[k])}" ${k==='Amount'?'inputmode="decimal"':''} ${['Transaction','Certificate','MerchantOrder'].includes(k)?'class="number" autocapitalize="off" autocorrect="off" spellcheck="false"':''}></label>`).join('')}${transfer(r)?'<p class="muted">收款方已隐藏，无需填写。</p>':''}<button class="primary" type="submit">保存核对结果</button></form><details><summary>识别原文</summary><pre>${esc(r.raw)}</pre></details></div></div><div class="detailActions"><button id="singleReocr">${icon('repeat')}重新识别</button><button id="singleDelete" class="danger">${icon('trash')}删除凭证</button></div>`;
- $('#detailClose').onclick=closeDetail;$('#edit').onsubmit=async e=>{e.preventDefault();const f={...r.fields,...Object.fromEntries(new FormData(e.target))};if(f.Type.includes('转账')){f.Payee='';f.PayeeStatus='hidden';}else delete f.PayeeStatus;const validated=parseReceipt([],f);await save({...r,fields:f,warning:validated.warning});await refresh();closeDetail();toast('核对结果已保存');};$('#singleDelete').onclick=()=>confirm('删除这张凭证？','仅删除这条凭证的识别记录，手机相册原图不受影响。记录删除后无法恢复。',async()=>{await remove([id]);closeDetail();await refresh();toast('已删除 1 张凭证');});$('#singleReocr').onclick=()=>confirm('重新识别这张凭证？','新的识别结果会替换已填写的字段。',async()=>{closeDetail();await runRows([r]);},'重新识别');if(busy)for(const control of $('#edit').querySelectorAll('input,select,button'))control.disabled=true;$('#singleReocr').disabled=busy;$('#singleDelete').disabled=busy;if(!$('#detail').open)$('#detail').showModal();}
+$('#confirmCancel').onclick=()=>$('#confirm').close();$('#confirm').onclose=()=>lastFocus?.focus();$('#confirmOK').onclick=async()=>{const action=confirmAction;$('#confirm').close();try{await action();}catch(e){toast(storageError(e));}};
+function closeDetail(){detailRequest++;$('#detail').close();for(const u of urls)URL.revokeObjectURL(u);urls=[];active=null;}
+$('#detail').addEventListener('close',()=>{if($('#detail').open)return;detailRequest++;for(const u of urls)URL.revokeObjectURL(u);urls=[];active=null;});
+async function showDetail(id,draft=null){let r=rows.find(r=>r.id===id);if(!r)return;active=id;const request=++detailRequest;let b;try{b=await photo(id);}catch(e){toast(storageError(e));return false;}if(active!==id||request!==detailRequest)return false;for(const old of urls)URL.revokeObjectURL(old);urls=[];if(draft)r={...r,fields:draft};const u=b?URL.createObjectURL(b):'';urls.push(u);const duplicates=peers.get(id)||[];
+ $('#detailBody').innerHTML=`<div class="dialogHeader"><div><small>${esc(r.name)}</small><h2>凭证详情</h2></div><button id="detailClose" class="icon" aria-label="关闭详情">${icon('close')}</button></div><div class="detailGrid"><div>${u?`<a href="${u}" target="_blank" rel="noopener"><img class="receiptPhoto" src="${u}" alt="原始凭证，点击放大"></a>`:''}</div><div><div class="notice ${r.warning?'warn':''}">${esc(r.warning||'关键信息已识别，请与原图核对。')}</div>${duplicates.length?`<div class="duplicateInfo"><strong>与 ${duplicates.length} 张凭证重复</strong>${duplicates.map(p=>`<p>${esc(rows.find(x=>x.id===p.id)?.name)}<br>${esc(p.reasons.join('、'))}</p>`).join('')}</div>`:''}<form id="edit"><label>凭证类型<select name="Type">${receiptTypes.map(t=>`<option ${r.fields.Type===t?'selected':''}>${t}</option>`).join('')}</select></label>${receiptFieldDefs(r.fields).map(([k,l])=>k==='PaymentKind'?`<label>${l}<select name="PaymentKind">${['商户支付','扫码付款','个人转账'].map(v=>`<option ${v===r.fields.PaymentKind?'selected':''}>${v}</option>`).join('')}</select></label>`:`<label>${l}<input name="${k}" value="${esc(r.fields[k])}" ${k==='Amount'?'inputmode="decimal"':''} ${['Transaction','Certificate','MerchantOrder'].includes(k)?'class="number" autocapitalize="off" autocorrect="off" spellcheck="false"':''}></label>`).join('')}${transfer(r)?'<p class="muted">收款方已隐藏，无需填写。</p>':''}<p id="saveError" class="notice warn" role="alert" hidden></p><button class="primary" type="submit">保存核对结果</button></form><details><summary>识别原文</summary><pre>${esc(r.raw)}</pre></details></div></div><div class="detailActions"><button id="singleReocr">${icon('repeat')}重新识别</button><button id="singleDelete" class="danger">${icon('trash')}删除凭证</button></div>`;
+ $('#detailClose').onclick=closeDetail;
+ for(const select of $('#edit').querySelectorAll('select'))select.onchange=async()=>{const name=select.name,draft={...r.fields,...Object.fromEntries(new FormData($('#edit')))},controls=[...$('#edit').querySelectorAll('input,select,button')];if(isWechatScreenshot(draft)&&!draft.PaymentKind)draft.PaymentKind='商户支付';for(const control of controls)control.disabled=true;try{const rendered=await showDetail(id,draft);if(rendered&&active===id)$('#edit select[name="'+name+'"]').focus({preventScroll:true});}finally{for(const control of controls)control.disabled=false;}};
+ $('#edit').onsubmit=async e=>{e.preventDefault();const form=e.target,button=form.querySelector('button[type=submit]');if(button.disabled)return;const f={...r.fields,...Object.fromEntries(new FormData(form))};if(f.Type.includes('转账')){f.Payee='';f.PayeeStatus='hidden';}else delete f.PayeeStatus;const savingRequest=detailRequest;const controls=[...form.querySelectorAll('input,select,button')];for(const control of controls)control.disabled=true;form.querySelector('#saveError').hidden=true;button.textContent='正在保存…';try{const validated=parseReceipt([],f);await save({...r,fields:f,warning:validated.warning});await refresh();if(active===id&&detailRequest===savingRequest)closeDetail();toast('核对结果已保存');}catch(error){const message=storageError(error);if(form.isConnected){const feedback=form.querySelector('#saveError');feedback.textContent=message;feedback.hidden=false;feedback.scrollIntoView({block:'nearest'});}else toast(message);}finally{for(const control of controls)control.disabled=false;button.textContent='保存核对结果';}};
+ $('#singleDelete').onclick=()=>confirm('删除这张凭证？','仅删除这条凭证的识别记录，手机相册原图不受影响。记录删除后无法恢复。',async()=>{await remove([id]);closeDetail();await refresh();toast('已删除 1 张凭证');});$('#singleReocr').onclick=()=>confirm('重新识别这张凭证？','新的识别结果会替换已填写的字段。',async()=>{closeDetail();await runRows([r]);},'重新识别');if(busy)for(const control of $('#edit').querySelectorAll('input,select,button'))control.disabled=true;$('#singleReocr').disabled=busy;$('#singleDelete').disabled=busy;if(!$('#detail').open)$('#detail').showModal();return true;}
 async function runRows(items){
  if(busy||!items.length)return;if(!await requireModel()||busy)return;
- cancel=false;setBusy(true);batchProgress(0,items.length);let count=0,processed=0;
+ cancel=false;setBusy(true);batchProgress(0,items.length);$('#importErrors').hidden=true;let count=0,processed=0,failed=0,lastError='';
  const recognizeBatch=createBatchRecognizer((file,progress)=>recognize(file,model,progress),hash);
  try{
   for(const r of items){
    if(cancel)break;batchProgress(processed,items.length,r.name);status('正在读取照片…');
-   const blob=await photo(r.id);
-   if(!blob){processed++;batchProgress(processed,items.length,r.name);continue;}
-   try{const {result}=await recognizeBatch(blob,status);status('正在保存识别结果…');await save({...r,...result,model});count++;processed++;batchProgress(processed,items.length,r.name);}
-   catch(e){toast(r.name+'：'+e.message);break;}
+   try{const blob=await photo(r.id);if(!blob)throw new Error('存档照片缺失');const {result}=await recognizeBatch(blob,status);status('正在保存识别结果…');await save({...r,...result,model});count++;}
+   catch(e){failed++;lastError=storageError(e);$('#importErrors').textContent=r.name+'：'+lastError;$('#importErrors').hidden=false;if(e.name==='QuotaExceededError')break;}
+   finally{processed++;batchProgress(processed,items.length,r.name);}
   }
-  await refresh();toast(`已重新识别 ${count} 张凭证`);
+  await refresh();toast(`已重新识别 ${count} 张${failed?`，${failed} 张未完成：${lastError}`:''}`);
  }finally{setBusy(false);}
 }
+
 async function importFiles(files){
  if(busy)return;const items=Array.from(files);if(!items.length)return;
  if(!await requireModel()||busy){$('#files').value='';return;}
@@ -101,13 +100,13 @@ async function importFiles(files){
  const recognizeBatch=createBatchRecognizer((file,progress)=>recognize(file,model,progress),hash);
  let count=0,failed=0,lastError='';
  try{
-  await navigator.storage?.persist?.();
+  await requestPersistence();
   for(let i=0;i<items.length;i++){
    if(cancel)break;const file=items[i];batchProgress(i,items.length,file.name);status('正在读取照片…');
-   if(file.size>30*1024*1024){failed++;toast(file.name+' 超过 30 MB，请缩小后导入');batchProgress(i+1,items.length,file.name);continue;}
+   if(file.size>30*1024*1024){failed++;lastError='超过 30 MB，请缩小后导入';$('#importErrors').textContent=file.name+'：'+lastError;$('#importErrors').hidden=false;toast(file.name+'：'+lastError);batchProgress(i+1,items.length,file.name);continue;}
    const id=crypto.randomUUID(),r={id,name:file.name,photo:'photos/'+id+'.'+(/\.png$/i.test(file.name)?'png':'jpg'),imported:new Date().toISOString(),fields:{},raw:'',warning:''};
    try{const recognized=await recognizeBatch(file,status);r.hash=recognized.hash;status('正在保存识别结果…');await save({...r,...recognized.result,model},file);count++;}
-   catch(e){failed++;lastError=e.message||String(e);$('#importErrors').textContent=file.name+'：'+lastError;$('#importErrors').hidden=false;toast(file.name+'：'+lastError);}
+   catch(e){failed++;lastError=storageError(e);$('#importErrors').textContent=file.name+'：'+lastError;$('#importErrors').hidden=false;toast(file.name+'：'+lastError);}
    batchProgress(i+1,items.length,file.name);
   }
   toast(`已导入 ${count} 张${failed?`，${failed} 张未完成：${lastError}`:''}`);
@@ -128,8 +127,8 @@ $('#selectAll').onclick=()=>{const ids=visible().map(r=>r.id),all=ids.every(id=>
 for(const b of document.querySelectorAll('[data-filter]'))b.onclick=()=>{filter=b.dataset.filter;for(const x of document.querySelectorAll('[data-filter]'))x.setAttribute('aria-pressed',x===b);render();};
 $('#import').onclick=()=>{if(modelState.ready&&!modelDownloading){$('#files').click();void offlineRuntime().then(()=>initialize(model)).catch(()=>{});}else{focusModel();toast(modelDownloading?'模型正在下载，完成后即可导入':'请先下载本地识别模型');}};$('#files').onchange=e=>importFiles(e.target.files);$('#stop').onclick=()=>{cancel=true;$('#stop').disabled=true;status('当前凭证完成后停止');};$('#progress').oncancel=e=>e.preventDefault();
 async function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}
-const dated=()=>new Date().toISOString().slice(0,10);
-$('#excel').onclick=async()=>{closeMenu();if(!rows.length){toast('暂无可导出的凭证');return;}try{await download(await exportExcel(rows),'查重小助手-'+dated()+'.xlsx');toast('Excel 已生成，共 '+rows.length+' 张凭证');}catch(e){toast(e.message);}};$('#backup').onclick=async()=>{closeMenu();if(!rows.length){toast('暂无可备份的凭证');return;}try{await download(await backup(),'查重小助手备份-'+dated()+'.zip');toast('备份已生成，请保存下载文件');}catch(e){toast(e.message);}};$('#restore').onclick=()=>{closeMenu();$('#zip').click();};$('#zip').onchange=e=>{const file=e.target.files[0];if(!file)return;confirm('恢复备份？','备份会替换当前列表。当前凭证会先自动下载 ZIP 备份。',async()=>{if(rows.length)await download(await backup(),'恢复前自动备份-'+dated()+'.zip');cancel=false;setBusy(true);$('#progressTitle').textContent='正在恢复备份';$('#stop').hidden=true;$('#progressCount').textContent='正在校验备份文件';$('#progressPercent').textContent='';$('#recognitionProgress').removeAttribute('value');status('正在校验并恢复备份…');try{const n=await restoreZIP(file);selected.clear();await refresh();toast(`已恢复 ${n} 张凭证`);}finally{setBusy(false);$('#zip').value='';}},'恢复备份');};$('#reocr').onclick=()=>{closeMenu();if(!rows.length){toast('暂无可重新识别的凭证');return;}confirm('重新识别全部凭证？','新的识别结果会替换已填写的字段。识别期间请保持页面打开。',()=>runRows(rows),'重新识别');};
+const dated=localDay;
+$('#excel').onclick=async()=>{closeMenu();if(!rows.length){toast('暂无可导出的凭证');return;}try{await download(await exportExcel(rows),'查重小助手-'+dated()+'.xlsx');toast('Excel 已生成，共 '+rows.length+' 张凭证');}catch(e){toast(storageError(e));}};$('#backup').onclick=async()=>{closeMenu();if(!rows.length){toast('暂无可备份的凭证');return;}try{await download(await backup(),'查重小助手备份-'+dated()+'.zip');toast('备份已生成，请保存下载文件');}catch(e){toast(storageError(e));}};$('#restore').onclick=()=>{closeMenu();$('#zip').click();};$('#zip').onchange=e=>{const file=e.target.files[0];e.target.value='';if(!file)return;confirm('恢复备份？','备份会替换当前列表。当前凭证会先自动下载 ZIP 备份。',async()=>{if(busy)return;cancel=false;setBusy(true);$('#progressTitle').textContent='正在恢复备份';$('#stop').hidden=true;$('#progressCount').textContent='正在校验备份文件';$('#progressPercent').textContent='';$('#recognitionProgress').removeAttribute('value');status('正在校验并恢复备份…');try{if(rows.length)await download(await backup(),'恢复前自动备份-'+dated()+'.zip');const n=await restoreZIP(file);selected.clear();await refresh();toast(`已恢复 ${n} 张凭证`);}finally{setBusy(false);$('#zip').value='';}},'恢复备份');};$('#reocr').onclick=()=>{closeMenu();if(!rows.length){toast('暂无可重新识别的凭证');return;}confirm('重新识别全部凭证？','新的识别结果会替换已填写的字段。识别期间请保持页面打开。',()=>runRows(rows),'重新识别');};
 window.addEventListener('beforeunload',e=>{if(busy||modelDownloading){e.preventDefault();e.returnValue='';}});window.addEventListener('dragover',e=>e.preventDefault());window.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files.length)importFiles(e.dataTransfer.files);});
 try{await openDB();await refresh();}catch(e){toast('本地数据库不可用：'+e.message);}
 await checkModel({migrate:true});

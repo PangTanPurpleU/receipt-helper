@@ -13,7 +13,7 @@ export async function initialize(model='paddle-v6-tiny',progress=()=>{}){
   if(model.startsWith('paddle')){
    worker=new Worker(new URL('paddle-worker.js',import.meta.url),{type:'module'});
    worker.onmessage=({data})=>{const p=pending.get(data.id);if(p){pending.delete(data.id);data.error?p.reject(new Error(data.error)):p.resolve(data);}};
-   worker.onerror=e=>{for(const p of pending.values())p.reject(new Error(e.message||'识别线程启动失败'));pending.clear();};
+   worker.onerror=e=>{const error=new Error(e.message||'识别线程异常，请重新识别');for(const p of pending.values())p.reject(error);pending.clear();void dispose();};
    await send({type:'init',model});engine='paddle';
   }
   current=model;
@@ -21,7 +21,7 @@ export async function initialize(model='paddle-v6-tiny',progress=()=>{}){
  initialization=operation;
  try{await operation;}finally{if(initialization===operation)initialization=null;}
 }
-function send(data){const requestId=++id;return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('模型加载或识别超时，请重新打开页面重试'));},180000);pending.set(requestId,{resolve:v=>{clearTimeout(timer);resolve(v);},reject:e=>{clearTimeout(timer);reject(e);}});worker.postMessage({...data,id:requestId},data.pixels?[data.pixels]:[]);});}
+function send(data){const requestId=++id;return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('模型加载或识别超时，请重新识别'));void dispose();},180000);pending.set(requestId,{resolve:v=>{clearTimeout(timer);resolve(v);},reject:e=>{clearTimeout(timer);reject(e);}});worker.postMessage({...data,id:requestId},data.pixels?[data.pixels]:[]);});}
 export async function dispose(){current=null;if(worker){worker.terminate();worker=null;}if(engine&&engine!=='paddle')await engine.terminate();engine=null;for(const p of pending.values())p.reject(new Error('识别已停止'));pending.clear();}
 export async function canvasFor(file,max=3000){
  let source;try{source=await createImageBitmap(file,{imageOrientation:'from-image'});}catch{const u=URL.createObjectURL(file);try{source=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('图片格式暂不支持，请转为 JPG 或 PNG 后导入'));i.src=u;});}finally{URL.revokeObjectURL(u);}}
