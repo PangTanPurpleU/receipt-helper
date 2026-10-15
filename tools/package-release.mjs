@@ -16,9 +16,9 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = resolve(
-  process.argv[2] || resolve(root, "../交付包/查重小助手-网站完全体.zip"),
+  process.argv[2] || resolve(root, "../交付包/凭证查重助手-网站完全体.zip"),
 );
-const prefix = "查重小助手-网站完全体/",
+const prefix = "凭证查重助手-网站完全体/",
   zip = new JSZip(),
   sums = [];
 // A delivered source ZIP has no .git directory. Package the same allowlist
@@ -135,7 +135,7 @@ if (sourceCommit) {
   }
 }
 const manifest = {
-  name: "查重小助手-网站完全体",
+  name: "凭证查重助手-网站完全体",
   createdAt: new Date().toISOString(),
   sourceCommit,
   website: "https://pangtanpurpleu.github.io/receipt-helper/",

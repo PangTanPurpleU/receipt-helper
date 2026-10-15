@@ -85,6 +85,8 @@ await writeFile(
     JSON.stringify(packs) +
     ';\nexport const MODEL_ASSETS=MODEL_PACKS["paddle-v6-tiny"];\n',
 );
+const { version } = JSON.parse(await readFile("package.json", "utf8"));
+await writeFile("src/version.js", `// Generated from package.json by tools/build.mjs.\nexport const APP_VERSION = ${JSON.stringify(version)};\n`);
 await build({ ...options, entryPoints: ["src/app.js"] });
 for (const path of [
   "index.html",
@@ -111,7 +113,7 @@ await writeFile(
     .replace("__OCR_VERSION__", JSON.stringify(modelVersion)),
 );
 let licenses =
-  "查重小助手浏览器本地版\n\nPP-OCRv6 tiny models: PaddlePaddle Authors, Apache-2.0\nhttps://github.com/PaddlePaddle/PaddleOCR\n\n";
+  "凭证查重助手浏览器本地版\n\nPP-OCRv6 tiny models: PaddlePaddle Authors, Apache-2.0\nhttps://github.com/PaddlePaddle/PaddleOCR\n\n";
 for (const pkg of ["@paddleocr/paddleocr-js", "jszip"]) {
   const root = await realpath("node_modules/" + pkg);
   for (const f of await readdir(root))

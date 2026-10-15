@@ -717,6 +717,7 @@ progress::-moz-progress-bar {
 }
 footer {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 7px;
@@ -1594,5 +1595,14 @@ h1 {
 /* Keep numeric values legible when a long merchant/product shares the row. */
 .receiptTitle b {
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.footerPrivacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.appVersion {
   font-variant-numeric: tabular-nums;
 }

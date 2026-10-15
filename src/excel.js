@@ -77,10 +77,8 @@ export async function exportExcel(rows, allRows = rows) {
       "原价",
       "优惠信息",
     );
-  if (adaptive) {
-    if (!wechat) headers.push("商品说明");
-    headers.push("出具机构");
-  }
+  if (extended && !wechat) headers.push("商品说明");
+  if (adaptive) headers.push("出具机构");
   const total = summary(rows),
     exactTotal = total.cents === null || total.cents >= 1e15;
   const lastColumn = String.fromCharCode(64 + headers.length);
@@ -88,10 +86,8 @@ export async function exportExcel(rows, allRows = rows) {
     ? [24, 18, 36, 42, 24, 30, 42, 32, 14]
     : [24, 16, 36, 42, 14];
   if (wechat) widths.push(60, 18, 24, 18, 24, 26, 18, 36);
-  if (adaptive) {
-    if (!wechat) widths.push(60);
-    widths.push(32);
-  }
+  if (extended && !wechat) widths.push(60);
+  if (adaptive) widths.push(32);
   const sorted = rows
     .map((r, i) => ({
       r,
@@ -144,7 +140,7 @@ export async function exportExcel(rows, allRows = rows) {
             })
             .join("")
         : ""
-    }${adaptive ? (!wechat ? text("J" + n, r.fields.ProductDescription) : "") + text((wechat ? "R" : "K") + n, r.fields.Source) : ""}</row>`;
+    }${extended && !wechat ? text("J" + n, r.fields.ProductDescription) : ""}${adaptive ? text((wechat ? "R" : "K") + n, r.fields.Source) : ""}</row>`;
   });
   sheet += `</sheetData><autoFilter ref="A2:${lastColumn}${rows.length + 2}"/></worksheet>`;
   z.file("xl/worksheets/sheet1.xml", sheet);

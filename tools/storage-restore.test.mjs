@@ -37,6 +37,7 @@ function database({ failPut = false } = {}) {
   let opened = 0;
   const db = {
     transaction(names) {
+      names = typeof names === "string" ? [names] : names;
       const staged = Object.fromEntries(
           names.map((n) => [n, new Map(state[n])]),
         ),
@@ -47,6 +48,14 @@ function database({ failPut = false } = {}) {
           },
           objectStore(name) {
             return {
+              getAll() {
+                const r = {};
+                queueMicrotask(() => {
+                  r.result = [...staged[name].values()];
+                  r.onsuccess?.();
+                });
+                return r;
+              },
               clear() {
                 staged[name].clear();
               },
@@ -87,14 +96,14 @@ function database({ failPut = false } = {}) {
     },
   };
 }
-test("restore rejects malformed timestamps and preserves original data before opening a transaction", async () => {
+test("restore rejects malformed timestamps and preserves original data without a write transaction", async () => {
   const d = database();
   const { restoreZIP } = await import("../src/storage.js?invalid-imported");
   await assert.rejects(
     restoreZIP(await archive([{ ...row, imported: 42 }])),
     /无效/,
   );
-  assert.equal(d.opened, 0);
+  assert.equal(d.opened, 1);
   assert.equal(d.state.receipts.size, 1);
 });
 test("restore rejects oversized ZIP metadata before attempting decompression", async () => {
@@ -105,7 +114,7 @@ test("restore rejects oversized ZIP metadata before attempting decompression", a
   zip.writeUInt32LE(600 * 1024 * 1024, central + 24);
   const { restoreZIP } = await import("../src/storage.js?oversized");
   await assert.rejects(restoreZIP(zip), /过大/);
-  assert.equal(d.opened, 0);
+  assert.equal(d.opened, 1);
 });
 test("photo digest or archive CRC mismatch cannot replace existing records", async () => {
   const d = database();
@@ -118,7 +127,7 @@ test("photo digest or archive CRC mismatch cannot replace existing records", asy
     central = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
   zip.writeUInt32LE(0, central + 16);
   await assert.rejects(restoreZIP(zip), /CRC32/);
-  assert.equal(d.opened, 0);
+  assert.equal(d.opened, 1);
   assert.equal(d.state.receipts.has("original"), true);
 });
 test("valid restore retains screenshot fields, while synchronous write failure rolls back both stores", async () => {

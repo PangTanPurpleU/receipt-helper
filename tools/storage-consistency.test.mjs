@@ -8,9 +8,12 @@ async function setup(name) {
   return import("../src/storage.js?" + name);
 }
 const row = {
-  id: "synthetic",
+  id: "00000000-0000-4000-8000-000000000001",
   name: "测试.png",
-  photo: "photos/synthetic.png",
+  photo: "photos/00000000-0000-4000-8000-000000000001.png",
+  raw: "synthetic",
+  warning: "",
+  hash: "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81",
   fields: { Amount: "12.00" },
 };
 test("simultaneous startup reads share one database connection", async () => {

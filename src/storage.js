@@ -141,7 +141,63 @@ export async function hash(blob) {
     x.toString(16).padStart(2, "0"),
   ).join("");
 }
-export async function backup() {
+export const BACKUP_LIMITS = Object.freeze({
+  bytes: 500 * 1024 * 1024,
+  jsonBytes: 8 * 1024 * 1024,
+  photoBytes: 100 * 1024 * 1024,
+  records: 5000,
+});
+// Include full records as well as revisions so legacy writers are detected too.
+const snapshotOf = (rows) => JSON.stringify(rows);
+function validateBackupRow(r, ids, paths) {
+  if (
+    !r ||
+    typeof r !== "object" ||
+    !/^[0-9a-f-]{36}$/i.test(r.id) ||
+    ids.has(r.id) ||
+    !/^photos\/[0-9a-f-]{36}\.(jpg|jpeg|png|bmp|heic)$/i.test(r.photo) ||
+    paths.has(r.photo) ||
+    !r.fields ||
+    typeof r.fields !== "object" ||
+    Array.isArray(r.fields) ||
+    Object.keys(r.fields).length > 128 ||
+    Object.values(r.fields).some(
+      (v) => typeof v !== "string" || v.length > 32760,
+    ) ||
+    !/^[a-f0-9]{64}$/i.test(r.hash) ||
+    typeof r.name !== "string" ||
+    r.name.length > 1024 ||
+    typeof r.raw !== "string" ||
+    typeof r.warning !== "string" ||
+    (r.imported !== undefined && typeof r.imported !== "string")
+  )
+    throw new Error("备份中有无效或重复记录");
+}
+function checkArchiveLimits(z, archiveBytes) {
+  const limit = BACKUP_LIMITS.bytes;
+  if (archiveBytes > limit) throw new Error("备份超过 500 MB");
+  const entries = Object.values(z.files).filter((e) => !e.dir);
+  if (entries.length > BACKUP_LIMITS.records + 1)
+    throw new Error("备份文件数量过多");
+  let size = 0;
+  for (const entry of entries) {
+    const bytes = entry._data?.uncompressedSize;
+    if (!Number.isSafeInteger(bytes) || bytes < 0)
+      throw new Error("备份文件大小无效");
+    size += bytes;
+    if (size > limit) throw new Error("备份解压后过大");
+    if (
+      bytes >
+      (entry.name === "receipts.json"
+        ? BACKUP_LIMITS.jsonBytes
+        : BACKUP_LIMITS.photoBytes)
+    )
+      throw new Error(
+        entry.name === "receipts.json" ? "备份记录文件过大" : "备份照片过大",
+      );
+  }
+}
+export async function backup({ withSnapshot = false } = {}) {
   const d = await openDB(),
     t = d.transaction(["receipts", "photos"], "readonly"),
     complete = done(t),
@@ -158,45 +214,55 @@ export async function backup() {
     }
   };
   await complete;
-  const z = new JSZip();
-  z.file(
-    "receipts.json",
-    JSON.stringify(
-      rows.map(({ elapsedMs, model, ...r }) => r),
-      null,
-      2,
-    ),
+  if (rows.length > BACKUP_LIMITS.records)
+    throw new Error("凭证超过 5000 张，请减少后备份");
+  const ids = new Set(),
+    paths = new Set();
+  for (const row of rows) {
+    validateBackupRow(row, ids, paths);
+    ids.add(row.id);
+    paths.add(row.photo);
+  }
+  const json = JSON.stringify(
+    rows.map(({ elapsedMs, model, ...r }) => r),
+    null,
+    2,
   );
+  const jsonBytes = new TextEncoder().encode(json).byteLength;
+  if (jsonBytes > BACKUP_LIMITS.jsonBytes) throw new Error("备份记录文件过大");
+  const z = new JSZip();
+  z.file("receipts.json", json);
+  let expanded = jsonBytes;
   for (const r of rows) {
     const b = photos.get(r.id);
     if (!b) throw new Error("存档照片缺失，备份未生成：" + r.name);
+    const size = b.size ?? b.byteLength;
+    if (size > BACKUP_LIMITS.photoBytes) throw new Error("备份照片过大");
+    expanded += size;
+    if (expanded > BACKUP_LIMITS.bytes) throw new Error("备份解压后过大");
+    if ((await hash(new Blob([b]))) !== r.hash.toLowerCase())
+      throw new Error("照片校验失败：" + r.name);
     z.file(r.photo, b);
   }
-  return z.generateAsync({ type: "blob", compression: "STORE" });
+  const blob = await z.generateAsync({ type: "blob", compression: "STORE" });
+  if (blob.size > BACKUP_LIMITS.bytes) throw new Error("备份超过 500 MB");
+  return withSnapshot
+    ? { blob, snapshot: snapshotOf(rows), count: rows.length }
+    : blob;
 }
-export async function restoreZIP(file) {
-  const limit = 500 * 1024 * 1024;
-  if (file.size > limit) throw new Error("备份超过 500 MB");
-  // Inspect central-directory sizes BEFORE CRC verification inflates every entry.
+export async function restoreZIP(file, { expectedSnapshot } = {}) {
+  // Capture before decompression; compare inside the final write transaction.
+  // The UI supplies the earlier safety-backup snapshot, including an empty DB.
+  const expected = expectedSnapshot ?? snapshotOf(await records());
+  const limit = BACKUP_LIMITS.bytes;
+  const archiveBytes = file.size ?? file.byteLength;
+  if (archiveBytes > limit) throw new Error("备份超过 500 MB");
   let z = await JSZip.loadAsync(file);
-  const entries = Object.values(z.files).filter((e) => !e.dir);
-  let size = 0;
-  if (entries.length > 5001) throw new Error("备份文件数量过多");
-  for (const entry of entries) {
-    const bytes = entry._data?.uncompressedSize;
-    if (!Number.isSafeInteger(bytes) || bytes < 0)
-      throw new Error("备份文件大小无效");
-    size += bytes;
-    if (size > limit) throw new Error("备份解压后过大");
-    if (bytes > (entry.name === "receipts.json" ? 8 : 100) * 1024 * 1024)
-      throw new Error(
-        entry.name === "receipts.json" ? "备份记录文件过大" : "备份照片过大",
-      );
-  }
+  checkArchiveLimits(z, archiveBytes);
   if (!z.file("receipts.json")) throw new Error("备份缺少 receipts.json");
   z = await JSZip.loadAsync(file, { checkCRC32: true });
   const rows = JSON.parse(await z.file("receipts.json").async("string"));
-  if (!Array.isArray(rows) || rows.length > 5000)
+  if (!Array.isArray(rows) || rows.length > BACKUP_LIMITS.records)
     throw new Error("备份记录格式无效");
   const ids = new Set(),
     paths = new Set(),
@@ -204,28 +270,7 @@ export async function restoreZIP(file) {
     prepared = [];
   let expanded = 0;
   for (const r of rows) {
-    if (
-      !r ||
-      typeof r !== "object" ||
-      !/^[0-9a-f-]{36}$/i.test(r.id) ||
-      ids.has(r.id) ||
-      !/^photos\/[0-9a-f-]{36}\.(jpg|jpeg|png|bmp|heic)$/i.test(r.photo) ||
-      paths.has(r.photo) ||
-      !r.fields ||
-      typeof r.fields !== "object" ||
-      Array.isArray(r.fields) ||
-      Object.keys(r.fields).length > 128 ||
-      Object.values(r.fields).some(
-        (v) => typeof v !== "string" || v.length > 32760,
-      ) ||
-      !/^[a-f0-9]{64}$/i.test(r.hash) ||
-      typeof r.name !== "string" ||
-      r.name.length > 1024 ||
-      typeof r.raw !== "string" ||
-      typeof r.warning !== "string" ||
-      (r.imported !== undefined && typeof r.imported !== "string")
-    )
-      throw new Error("备份中有无效或重复记录");
+    validateBackupRow(r, ids, paths);
     ids.add(r.id);
     paths.add(r.photo);
     const entry = z.file(r.photo);
@@ -256,19 +301,29 @@ export async function restoreZIP(file) {
   const d = await openDB(),
     t = d.transaction(["receipts", "photos"], "readwrite"),
     complete = done(t);
-  // Validate everything first; even a synchronous put failure must roll back clear().
+  let writeError;
+  const lookup = t.objectStore("receipts").getAll();
+  lookup.onsuccess = () => {
+    try {
+      if (snapshotOf(lookup.result) !== expected)
+        throw new Error(
+          "恢复期间凭证已在其他页面修改，请重试以重新备份最新数据",
+        );
+      for (const name of ["receipts", "photos"]) t.objectStore(name).clear();
+      prepared.forEach((r, i) => {
+        t.objectStore("receipts").put(r);
+        t.objectStore("photos").put(blobs[i], r.id);
+      });
+    } catch (error) {
+      writeError = error;
+      t.abort();
+    }
+  };
   try {
-    for (const name of ["receipts", "photos"]) t.objectStore(name).clear();
-    prepared.forEach((r, i) => {
-      t.objectStore("receipts").put(r);
-      t.objectStore("photos").put(blobs[i], r.id);
-    });
+    await complete;
   } catch (error) {
-    t.abort();
-    await complete.catch(() => {});
-    throw error;
+    throw writeError || error;
   }
-  await complete;
   announceChange();
   return rows.length;
 }

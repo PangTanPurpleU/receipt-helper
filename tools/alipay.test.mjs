@@ -172,7 +172,7 @@ test("screenshot and mixed Excel exports use adaptable columns, exact text order
   assert.match(xml, /<c r="D3" s="0" t="inlineStr"/);
   assert.match(xml, /<c r="I3" s="3"/);
   assert.ok(xml.includes("2517.70"));
-  assert.ok(xml.includes("A2:I4"));
+  assert.ok(xml.includes("A2:J4"));
   assert.ok(!xml.includes("金额大写"));
   const mixed = await exportExcel([
       a,
