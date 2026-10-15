@@ -12,7 +12,8 @@
     "jszip": "3.10.2"
   },
   "devDependencies": {
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "fake-indexeddb": "6.2.4"
   },
   "packageManager": "pnpm@11.25.0"
 }
