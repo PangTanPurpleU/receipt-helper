@@ -231,3 +231,5 @@ h1{font-size:38px;line-height:1.16;margin:0 0 5px}
 @media(min-width:361px) and (max-width:600px){.stats>div:first-child #total[data-size=compact]{font-size:28px}.stats>div:first-child #total[data-size=dense]{font-size:24px}}
 
 .sourceBadge{background:var(--soft);color:var(--muted)}
+
+.receiptTitle .productTitle{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;line-height:1.5}
