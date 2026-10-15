@@ -1,4 +1,5 @@
-import {parseReceipt,orderedLines,validOrder,amountCents,dateValue,transfer} from './core.js';
+import {parseReceipt,orderedLines,dateValue,needsRecognitionRetry} from './core.js';
+import {validReceiptOrder} from './receipt-types.js';
 let worker,engine,current,initialization,id=0,pending=new Map();
 export const MODEL_NAMES={'paddle-v6-tiny':'PaddleOCR v6 tiny 中文'};
 export async function initialize(model='paddle-v6-tiny',progress=()=>{}){
@@ -41,10 +42,10 @@ export async function recognize(file,model='paddle-v6-tiny',progress=()=>{},retr
  if(image.status==='rejected')throw image.reason;
  progress('正在本地识别凭证…');const start=performance.now(),canvas=image.value;let r=await predict(canvas);
  const lines=r.items?.length?orderedLines(r.items):r.text.split('\n');let receipt=parseReceipt(lines);receipt.raw=lines.join('\n');
- if(retry&&(!validOrder(receipt.fields.Transaction,transfer(receipt))||amountCents(receipt.fields.Amount)===null||!receipt.fields.Payer||(!transfer(receipt)&&!receipt.fields.Payee)||!dateValue(receipt.fields.Traded))){
+ if(retry&&needsRecognitionRetry(receipt)){
   const crop=document.createElement('canvas');crop.width=canvas.width;crop.height=Math.round(canvas.height*.58);crop.getContext('2d').drawImage(canvas,0,canvas.height*.08,canvas.width,crop.height,0,0,crop.width,crop.height);
-  const extra=await predict(crop),extraLines=extra.items?.length?orderedLines(extra.items):extra.text.split('\n');const second=parseReceipt([receipt.fields.Type,...extraLines]);
-  for(const [k,v] of Object.entries(second.fields))if((!receipt.fields[k]||(k==='Transaction'&&!validOrder(receipt.fields[k],transfer(receipt)))||(k==='Traded'&&!dateValue(receipt.fields[k])))&&v)receipt.fields[k]=v;
+  const extra=await predict(crop),extraLines=extra.items?.length?orderedLines(extra.items):extra.text.split('\n');const second=parseReceipt([receipt.fields.Type,...extraLines],null,receipt.fields.Type);
+  for(const [k,v] of Object.entries(second.fields))if((!receipt.fields[k]||(k==='Transaction'&&!validReceiptOrder(receipt.fields))||(k==='Traded'&&!dateValue(receipt.fields[k])))&&v)receipt.fields[k]=v;
   receipt.raw+='\n\n分区补识别\n'+extraLines.join('\n');receipt=parseReceiptFromFields(receipt);
  }
  receipt.elapsedMs=performance.now()-start;return receipt;
