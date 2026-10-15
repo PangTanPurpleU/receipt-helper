@@ -11,7 +11,7 @@ export function parseWechat(input){
  const raw=amountIndex<0?'':lines[amountIndex],display=amountIndex>0?lines[amountIndex-1]:'',kind=/^扫二维码付款/.test(display)?'扫码付款':/^转账-转给/.test(display)?'个人转账':'商户支付';
  const full=value('商户全称',true),recipient=display.replace(/^(?:扫二维码付款-给|转账-转给)/,'');
  const merchant=value('商户单号',true),transaction=value('交易单号|转账单号',true),refund=value('退款记录',true),status=value('当前状态');
- const f={Type:'微信支付截图',PaymentKind:kind,Amount:raw.replace(/^[+-]/,'').replaceAll(',',''),Traded:date(value(kind==='商户支付'?'支付时间':'转账时间')),Payee:full||recipient,Transaction:/^\d+$/.test(transaction)?transaction:'',PayeeFullName:full,PayeeDisplayName:recipient,
+ const f={Type:'微信支付截图',PaymentKind:kind,Amount:raw.replace(/^[+-]/,'').replaceAll(',',''),Traded:date(value(kind==='商户支付'?'支付时间':'转账时间'))||date(value(kind==='商户支付'?'转账时间':'支付时间')),Payee:full||recipient,Transaction:/^\d+$/.test(transaction)?transaction:'',PayeeFullName:full,PayeeDisplayName:recipient,
  ProductDescription:value('商品',true),MerchantOrder:/^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$/.test(merchant)?merchant:'',PaymentMethod:value('支付方式'),TradeStatus:status,Acquirer:value('收单机构'),TransferNote:value('转账说明|收款方备注',true),Received:date(value('收款时间')),OrderAmount:value('原价').replace(/[¥￥,]/g,''),Discount:value('优惠',true),RefundAmount:(refund.match(/已退款[¥￥]?(\d+\.\d{2})/)||status.match(/已退款\([¥￥]?(\d+\.\d{2})\)/)||[])[1]||'',RefundTime:date(refund),Direction:raw.startsWith('-')?'支出':raw?'收入':''};
  // A barcode's printable merchant order may follow an instructional label.
  // Keep it separate from the authoritative transaction/transfer number.

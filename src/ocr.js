@@ -1,5 +1,5 @@
-import {parseReceipt,orderedLines,dateValue,needsRecognitionRetry} from './core.js';
-import {validReceiptOrder} from './receipt-types.js';
+import {parseReceipt,orderedLines,needsRecognitionRetry} from './core.js';
+import {retryRegion,mergeRecognition} from './recognition-retry.js';
 let worker,engine,current,initialization,id=0,pending=new Map();
 export const MODEL_NAMES={'paddle-v6-tiny':'PaddleOCR v6 tiny 中文'};
 export async function initialize(model='paddle-v6-tiny',progress=()=>{}){
@@ -21,7 +21,7 @@ export async function initialize(model='paddle-v6-tiny',progress=()=>{}){
  initialization=operation;
  try{await operation;}finally{if(initialization===operation)initialization=null;}
 }
-function send(data){const requestId=++id;return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('模型加载或识别超时，请重新识别'));void dispose();},180000);pending.set(requestId,{resolve:v=>{clearTimeout(timer);resolve(v);},reject:e=>{clearTimeout(timer);reject(e);}});worker.postMessage({...data,id:requestId},data.pixels?[data.pixels]:[]);});}
+function send(data){const requestId=++id;return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('模型加载或识别超时，请重新识别'));void dispose();},180000);pending.set(requestId,{resolve:v=>{clearTimeout(timer);resolve(v);},reject:e=>{clearTimeout(timer);reject(e);}});try{worker.postMessage({...data,id:requestId},data.pixels?[data.pixels]:[]);}catch(error){clearTimeout(timer);pending.delete(requestId);reject(error);void dispose();}});}
 export async function dispose(){current=null;if(worker){worker.terminate();worker=null;}if(engine&&engine!=='paddle')await engine.terminate();engine=null;for(const p of pending.values())p.reject(new Error('识别已停止'));pending.clear();}
 export async function canvasFor(file,max=3000){
  let source;try{source=await createImageBitmap(file,{imageOrientation:'from-image'});}catch{const u=URL.createObjectURL(file);try{source=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('图片格式暂不支持，请转为 JPG 或 PNG 后导入'));i.src=u;});}finally{URL.revokeObjectURL(u);}}
@@ -41,13 +41,15 @@ export async function recognize(file,model='paddle-v6-tiny',progress=()=>{},retr
  if(ready.status==='rejected')throw ready.reason;
  if(image.status==='rejected')throw image.reason;
  progress('正在本地识别凭证…');const start=performance.now(),canvas=image.value;let r=await predict(canvas);
- const lines=r.items?.length?orderedLines(r.items):r.text.split('\n');let receipt=parseReceipt(lines);receipt.raw=lines.join('\n');
- if(retry&&needsRecognitionRetry(receipt)){
-  const crop=document.createElement('canvas');crop.width=canvas.width;crop.height=Math.round(canvas.height*.58);crop.getContext('2d').drawImage(canvas,0,canvas.height*.08,canvas.width,crop.height,0,0,crop.width,crop.height);
-  const extra=await predict(crop),extraLines=extra.items?.length?orderedLines(extra.items):extra.text.split('\n');const second=parseReceipt([receipt.fields.Type,...extraLines],null,receipt.fields.Type);
-  for(const [k,v] of Object.entries(second.fields))if((!receipt.fields[k]||(k==='Transaction'&&!validReceiptOrder(receipt.fields))||(k==='Traded'&&!dateValue(receipt.fields[k])))&&v)receipt.fields[k]=v;
-  receipt.raw+='\n\n分区补识别\n'+extraLines.join('\n');receipt=parseReceiptFromFields(receipt);
+ const lines=r.items?.length?orderedLines(r.items):String(r.text||'').split('\n');let hasText=lines.some(s=>s.trim()),receipt=parseReceipt(lines);receipt.raw=lines.join('\n');
+ let region=retry?retryRegion(r.items||[],receipt.fields,canvas.width,canvas.height):null;
+ for(let pass=0;region&&pass<2;pass++){
+  const crop=document.createElement('canvas');crop.width=region.width;crop.height=region.height;crop.getContext('2d').drawImage(canvas,region.x,region.y,region.width,region.height,0,0,crop.width,crop.height);
+  const extra=await predict(crop),extraLines=extra.items?.length?orderedLines(extra.items):String(extra.text||'').split('\n');const second=parseReceipt([receipt.fields.Type,...extraLines],null,receipt.fields.Type);
+  hasText ||= extraLines.some(s=>s.trim());receipt=mergeRecognition(receipt,second);receipt.raw+='\n\n分区补识别\n'+extraLines.join('\n');
+  region=region.targeted&&needsRecognitionRetry(receipt)?retryRegion([],receipt.fields,canvas.width,canvas.height):null;
  }
+
+ if(!hasText)throw new Error('未识别到文字，请使用清晰、完整的凭证图片');
  receipt.elapsedMs=performance.now()-start;return receipt;
 }
-function parseReceiptFromFields(r){const validated=parseReceipt([],r.fields);return {...r,warning:validated.warning};}
