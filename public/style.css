@@ -56,7 +56,7 @@ h2 span{font-size:12px;font-weight:400;color:var(--muted);letter-spacing:0;margi
 .textButton{font-size:12px;color:var(--muted);padding:4px 12px}
 .modelReadyHint{display:block;color:var(--muted);font-size:11px;line-height:1.5;margin:4px 0 0 15px}
 .modelCard[data-state=ready]{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;min-height:68px;border-radius:18px;box-shadow:none}
-.modelCard[data-state=ready] .modelGlyph,.modelCard[data-state=ready] h2,.modelCard[data-state=ready]>p,.modelCard[data-state=ready] .modelPrivacy{display:none}
+.modelCard[data-state=ready]>p,.modelCard[data-state=ready] .modelPrivacy{display:none}
 .modelCard[data-state=ready] .modelStatus{margin:0;font-size:13px;font-weight:550;color:var(--ink)}
 .modelCard[data-state=ready] .modelControls{display:none}
 .modelCard[data-state=ready] .secondary{min-width:44px;padding:8px;font-size:11px;background:transparent;color:var(--accent);gap:6px}
@@ -208,16 +208,22 @@ h1{font-size:38px;line-height:1.16;margin:0 0 5px}
 .intro p{font-size:12px;line-height:1.5}
 .stats{padding:28px;border-radius:28px;box-shadow:0 6px 28px #00000005}
 .stats>div:first-child strong{font-size:44px}
-.modelCard[data-state=ready]{width:100%;min-height:44px;margin-top:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;justify-content:flex-start}
-.modelCard[data-state=ready] .modelStatus{font-size:12px;font-weight:500;color:var(--ink)}
+.modelCard[data-state=ready]{width:100%;min-height:56px;margin-top:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;justify-content:flex-start}
+.modelCard[data-state=ready] .modelHeading{width:100%;gap:10px}
+.modelCard[data-state=ready] .modelGlyph{width:30px;height:30px;border-radius:9px}
+.modelCard[data-state=ready] .modelGlyph svg{width:19px;height:19px;stroke-width:1.5}
+.modelCard[data-state=ready] .modelHeading>div{display:flex;align-items:center;justify-content:space-between;flex:1;gap:8px}
+.modelCard[data-state=ready] h2{font-size:12px;font-weight:550;line-height:1.4;letter-spacing:0}
+.modelCard[data-state=ready] .modelStatus{flex-shrink:0;gap:5px;padding:4px 7px;border-radius:8px;font-size:10px;line-height:1.5;font-weight:500;color:var(--green);background:var(--greenWash)}
+.modelCard[data-state=ready] .statusLight{width:5px;height:5px;box-shadow:none}
 .modelCard[data-state=ready] .modelReadyHint{display:none}
-.modelCard[data-state=ready] .statusLight{animation:status-breathe 2.4s var(--ease-in-out) infinite}
+.modelCard[data-state=ready] .statusLight{animation:status-breathe 3.6s var(--ease-in-out) infinite}
 .library{margin-top:12px}.libraryTools{margin-bottom:10px}
 .receipt{transition:transform 140ms var(--ease-out),background-color 150ms ease,border-color 150ms ease}
 .receipt:active:not(:disabled){transform:scale(.985)}
 #moreToggle:active:not(:disabled){transform:scale(.94)}
 @keyframes status-breathe{0%,100%{opacity:.78;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
-@media(max-width:600px){:root{--page-inset:24px}.intro{padding:14px 0}h1{font-size:28px}.intro p{font-size:11px}.stats{padding:24px 18px;gap:14px;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.95fr))}.stats>div:first-child strong{font-size:32px}.stats strong{font-size:26px}.modelCard[data-state=ready]{padding:11px 14px;min-height:44px}.filters button{padding:0 8px}.receipt{padding:20px 16px}}
+@media(max-width:600px){:root{--page-inset:24px}.intro{padding:14px 0}h1{font-size:28px}.intro p{font-size:11px}.stats{padding:24px 18px;gap:14px;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,.95fr))}.stats>div:first-child strong{font-size:32px}.stats strong{font-size:26px}.modelCard[data-state=ready]{padding:10px 12px;min-height:56px}.filters button{padding:0 8px}.receipt{padding:20px 16px}}
 @media(max-width:360px){:root{--page-inset:20px}h1{font-size:25px}.stats{padding:22px;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.stats>div:first-child strong{font-size:38px}.stats>div:first-child{grid-column:1/-1}.stats>div:nth-child(2){border-left:0;padding-left:0}}
 @media(prefers-reduced-motion:reduce){.introContent{transform:none!important;opacity:1!important}}
 
