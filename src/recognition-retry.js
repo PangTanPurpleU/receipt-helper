@@ -1,12 +1,18 @@
+import {adaptiveDate} from './adaptive.js';
 import {amountCents,dateValue,needsRecognitionRetry,parseReceipt} from './core.js';
-import {isAlipay,isScreenshot,isWechatScreenshot,validReceiptOrder} from './receipt-types.js';
+import {isAdaptive,isAlipay,isScreenshot,isWechatScreenshot,validReceiptOrder} from './receipt-types.js';
 
 // Preserve full-width label/value rows. Only narrow the vertical region when
 // every missing core field has a visible anchor; otherwise keep a broad crop.
 export function retryRegion(items,fields,width,height){
  if(!needsRecognitionRetry({fields}))return null;
  const fallback={x:0,y:Math.round(height*.08),width,height:height-Math.round(height*.08),targeted:false};
- if(!fields.Type||fields.Type==='其他凭证')return fallback;
+ if(!fields.Type||fields.Type==='其他凭证'||isAdaptive(fields)){
+  const points=items.flatMap(i=>i.poly||[]).filter(p=>p.every(Number.isFinite));
+  if(!points.length)return {...fallback,y:0,height};
+  const left=Math.max(0,Math.floor(Math.min(...points.map(p=>p[0]))-48)),top=Math.max(0,Math.floor(Math.min(...points.map(p=>p[1]))-64)),right=Math.min(width,Math.ceil(Math.max(...points.map(p=>p[0]))+48)),bottom=Math.min(height,Math.ceil(Math.max(...points.map(p=>p[1]))+96));
+  return right>left&&bottom>top?{x:left,y:top,width:right-left,height:bottom-top,targeted:(right-left)*(bottom-top)<width*height*.85}:{...fallback,y:0,height};
+ }
  const hidden=fields.Type.includes('转账'),transferTime=hidden||isWechatScreenshot(fields)&&fields.PaymentKind!=='商户支付',anchors=[];
  if(!validReceiptOrder(fields))anchors.push(isAlipay(fields)?/^订单号/:/^(?:交易|转[账帳帐])单号/);
  if(amountCents(fields.Amount)===null){if(isScreenshot(fields))return fallback;anchors.push(/^(?:交易金额)?小写/);}
@@ -21,12 +27,12 @@ export function retryRegion(items,fields,width,height){
 }
 export function mergeRecognition(first,second){
  const fields={...first.fields};
- if(fields.Type==='其他凭证'&&second.fields.Type&&second.fields.Type!=='其他凭证'&&!needsRecognitionRetry(second))fields.Type=second.fields.Type;
+ if((fields.Type==='其他凭证'||isAdaptive(fields))&&second.fields.Type&&second.fields.Type!=='其他凭证'&&!needsRecognitionRetry(second))fields.Type=second.fields.Type;
  for(const [key,value] of Object.entries(second.fields)){
   if(!value)continue;
   if(key==='Amount'){if(amountCents(fields.Amount)===null&&amountCents(value)!==null)fields[key]=value;}
   else if(key==='Transaction'){if(!validReceiptOrder(fields)&&validReceiptOrder({...fields,Transaction:value}))fields[key]=value;}
-  else if(key==='Traded'){if(!dateValue(fields.Traded)&&dateValue(value))fields[key]=value;}
+  else if(key==='Traded'){if(!(isAdaptive(fields)?adaptiveDate(fields.Traded):dateValue(fields.Traded))&&(isAdaptive(fields)?adaptiveDate(value):dateValue(value)))fields[key]=value;}
   else if(!fields[key])fields[key]=value;
  }
  const validated=parseReceipt([],fields);return {...first,fields,warning:validated.warning};

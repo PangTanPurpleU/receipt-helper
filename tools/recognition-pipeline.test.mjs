@@ -23,3 +23,6 @@ test('synchronous worker send failure permits a fresh engine on the next attempt
 
 test('blank photos fail with a useful message after one broad retry',()=>withEngine([[]],async count=>{await assert.rejects(recognize(new Blob()),/未识别到文字/);assert.equal(count(),2);}));
 test('a blank first pass can recover a complete screenshot and its correct type',()=>withEngine([[],lines(good)],async count=>{const r=await recognize(new Blob());assert.equal(r.fields.Type,'微信支付截图');assert.equal(r.fields.Transaction,good);assert.equal(r.warning,'');assert.equal(count(),2);}));
+
+test('a new receipt layout is extracted in one pass without requiring a provider-specific order',()=>withEngine([['星河便利店','日期 2026年10月15日','商品名称 矿泉水','合计 6.50']],async count=>{const r=await recognize(new Blob());assert.equal(r.fields.Type,'通用凭证');assert.equal(r.fields.Amount,'6.50');assert.equal(r.fields.Traded,'2026-10-15');assert.equal(r.warning,'');assert.equal(count(),1);}));
+test('adaptive retry fills evidence-backed fields and retains valid original values',()=>withEngine([['星河便利店','日期 2026年10月15日','金额 ???'],['实付金额 6.50']],async count=>{const r=await recognize(new Blob());assert.equal(r.fields.Type,'通用凭证');assert.equal(r.fields.Amount,'6.50');assert.equal(r.fields.Payee,'星河便利店');assert.equal(r.warning,'');assert.equal(count(),2);}));

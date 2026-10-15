@@ -137,23 +137,21 @@ pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
 .detailActions{display:flex;gap:16px;justify-content:flex-end;flex-wrap:wrap;margin-top:24px}
 .detailActions button{display:flex;align-items:center;gap:8px;font-size:13px}
 #toast{position:fixed;top:calc(16px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);background:var(--ink);color:var(--surface);padding:12px 20px;border-radius:16px;box-shadow:0 8px 30px #0000001a;z-index:20;font-size:13px;pointer-events:none}
-#progress{position:fixed;inset:0;margin:auto;transform:none;width:calc(100% - 40px);max-width:420px;max-height:calc(100dvh - 40px);padding:34px;border-radius:28px;text-align:center}
+#progress{position:fixed;inset:0;margin:auto;transform:none;width:calc(100% - 40px);max-width:420px;max-height:calc(100dvh - 40px);padding:32px;border-radius:24px;text-align:center}
 .recognitionHeading{display:flex;flex-direction:column;align-items:center}
 .recognitionGlyph{position:relative;display:grid;place-items:center;width:64px;height:64px;background:var(--wash);color:var(--accent);border-radius:20px;margin-bottom:20px}
 .recognitionGlyph>svg{width:30px;height:30px}
 .spinner{display:inline-block;width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
 .recognitionGlyph .spinner{position:absolute;right:-4px;bottom:-4px;width:24px;height:24px;border-width:3px;background:var(--surface);box-shadow:0 0 0 4px var(--surface)}
 .recognitionEyebrow{font-size:12px;font-weight:550;color:var(--accent);letter-spacing:.025em}
-#progressTitle{font-size:25px;letter-spacing:-.03em;margin-top:8px}
-#progressText{font-size:14px;line-height:1.6;margin:10px 0 26px;min-height:23px;color:var(--muted)}
+#progressTitle{font-size:23px;letter-spacing:-.03em;margin:8px 0 30px}
 .recognitionMetrics{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:10px;font-variant-numeric:tabular-nums}
 #progressCount{font-size:13px;color:var(--muted)}
 #progressPercent{font-size:32px;font-weight:600;line-height:1.2;letter-spacing:-.04em}
 #progressPercent span{font-size:16px;margin-left:3px;letter-spacing:0}
 #recognitionProgress{height:9px}
-#progress .recognitionFile{font-size:12px;margin:12px 0 0;min-height:18px;overflow-wrap:anywhere;color:var(--muted)}
-#progressPrivacy{font-size:12px;margin:22px 0 16px;color:var(--muted)}
-#progress #stop{width:100%;min-height:46px;padding:10px 16px;font-size:14px;font-weight:500;color:var(--ink);background:var(--soft);border-radius:13px}
+#progress .recognitionFile{font-size:12px;margin:12px 0 0;height:36px;line-height:18px;overflow:hidden;overflow-wrap:anywhere;color:var(--muted)}
+#progressPrivacy{font-size:12px;margin:24px 0 0;padding-top:18px;border-top:1px solid var(--line);color:var(--muted)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .menu{transition:opacity 160ms var(--ease-out),transform 160ms var(--ease-out),display 160ms allow-discrete}
 .menu[hidden]{opacity:0;transform:translateY(-4px) scale(.98)}
