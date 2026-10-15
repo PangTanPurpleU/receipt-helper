@@ -1,6 +1,6 @@
 import {adaptiveDate} from './adaptive.js';
 import {amountCents,dateValue,needsRecognitionRetry,parseReceipt} from './core.js';
-import {isAdaptive,isAlipay,isScreenshot,isWechatScreenshot,validReceiptOrder} from './receipt-types.js';
+import {isAdaptive,isAlipay,isScreenshot,isWechatScreenshot,validOrderIdentifier,validReceiptOrder} from './receipt-types.js';
 
 // Preserve full-width label/value rows. Only narrow the vertical region when
 // every missing core field has a visible anchor; otherwise keep a broad crop.
@@ -31,7 +31,7 @@ export function mergeRecognition(first,second){
  for(const [key,value] of Object.entries(second.fields)){
   if(!value)continue;
   if(key==='Amount'){if(amountCents(fields.Amount)===null&&amountCents(value)!==null)fields[key]=value;}
-  else if(key==='Transaction'){if(!validReceiptOrder(fields)&&validReceiptOrder({...fields,Transaction:value}))fields[key]=value;}
+  else if(key==='Transaction'){if(!validOrderIdentifier(fields)&&validOrderIdentifier({...fields,Transaction:value}))fields[key]=value;}
   else if(key==='Traded'){if(!(isAdaptive(fields)?adaptiveDate(fields.Traded):dateValue(fields.Traded))&&(isAdaptive(fields)?adaptiveDate(value):dateValue(value)))fields[key]=value;}
   else if(!fields[key])fields[key]=value;
  }

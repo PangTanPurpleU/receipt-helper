@@ -46,3 +46,24 @@ test('unreadable actual payment never silently falls back to a readable gross to
 test('labelled fields sharing a row are separated without splitting ordinary description words',()=>{
  const r=parseReceipt(['商户名称：星河便利店   日期：2026-10-15','实付金额：12.80   订单号：TEST123456','商品说明：矿泉水 两瓶']);assert.equal(r.fields.Amount,'12.80');assert.equal(r.fields.Traded,'2026-10-15');assert.equal(r.fields.Transaction,'TEST123456');assert.equal(r.fields.ProductDescription,'矿泉水 两瓶');assert.equal(r.warning,'');
 });
+test('an empty actual-paid label does not fall back to gross totals or standalone amounts',()=>{
+ for(const label of ['实付金额','实付金额：']){const r=parseReceipt(['商户名称：星河便利店','日期：2026-10-15',label,'合计：100.00','￥100.00']);assert.equal(r.fields.Amount,undefined);assert.equal(needsRecognitionRetry(r),true);}
+});
+test('known non-paid statuses and signed income remain explicitly flagged in generic layouts',()=>{
+ for(const status of ['待支付','支付失败','交易关闭','退款成功'])assert.match(parseReceipt([...bank,'交易状态：'+status]).warning,/交易状态/);
+ assert.equal(parseReceipt([...bank,'交易状态：支付成功']).warning,'');
+ assert.match(parseReceipt(['星河便利店','日期：2026-10-15','+12.80']).warning,/收入/);
+});
+test('retry retains a newly read generic order even when the original date has day precision',()=>{
+ const first=parseReceipt(['商户名称：星河便利店','日期：2026-10-15','实付金额：12.80']),second=parseReceipt(['订单号：ORDER123456']);assert.equal(mergeRecognition(first,second).fields.Transaction,'ORDER123456');
+});
+test('invalid dates or absent amounts cannot give a generic order authoritative duplicate evidence',()=>{
+ const f=parseReceipt(bank).fields;for(const change of [{Traded:'2026-02-30 09:08:07'},{Amount:''},{Amount:'0.00'}]){const fields={...f,...change};assert.equal(peerMap([{id:'a',fields},{id:'b',fields}]).size,0);}
+});
+test('generic date-only rows sort by their real day in Excel while remaining text cells',async()=>{
+ const {exportExcel}=await import('../src/excel.js'),{default:JSZip}=await import('jszip');const f=parseReceipt(bank).fields;
+ const rows=[{id:'later',fields:{...f,Payee:'后一天',Traded:'2026-10-16 09:08:07'}},{id:'earlier',fields:{...f,Payee:'前一天',Traded:'2026-10-15'}}],blob=await exportExcel(rows),z=await JSZip.loadAsync(await blob.arrayBuffer()),xml=await z.file('xl/worksheets/sheet1.xml').async('string');assert.ok(xml.indexOf('前一天')<xml.indexOf('后一天'));assert.match(xml,/<c r="A3"[^>]*t="inlineStr"/);
+});
+test('a contact WeChat ID does not turn an unfamiliar bank receipt into a WeChat certificate',()=>{
+ const r=parseReceipt([...bank,'微信号：客服测试号']);assert.equal(r.fields.Type,'通用凭证');assert.equal(r.fields.Amount,'1280.50');assert.equal(r.fields.Payee,'星河餐厅');
+});
