@@ -29,7 +29,7 @@ const label =
   Object.values(groups).flat().join("|") +
   "|原价|优惠|退款金额|税额|单价|数量|支付方式|收单机构|商户单号|付款账号|收款账号";
 const columns = new RegExp("\\s+(?=(?:" + label + ")[：:])");
-const boundary = new RegExp("^(?:" + label + ")(?:[：:\\s]|$)");
+const boundary = new RegExp("^(?:" + label + ")(?:[：:\\s]|$|(?=[+\\-¥￥\\d]))");
 function entries(lines, pattern) {
   const re = new RegExp(
     "^(?:" + pattern + ")(?:[：:\\s]+|$|(?=[¥￥\\d]))(.*)$",

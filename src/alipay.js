@@ -7,6 +7,8 @@ const compact = (s) =>
     .replace(/[−–—﹣]/g, "-");
 const boundary =
   /^(?:支付时间|付款时间|付款方式|支付奖励|收款方全称|收款方|订单号|商家订单号|商品说明|收单机构|清算机构|乘车时间|订单金额|交易详情|服务详情|温馨提示|管理免密支付|管理极速付款|账单管理|账单分类|关联记录)/;
+const discountLabel = /^(?:焕新折扣|工商银行立减(?:金)?|碰一下立减|优惠|立减)/;
+const isBoundary = (line) => boundary.test(line) || discountLabel.test(line);
 export function isAlipayLines(lines) {
   const t = lines.map(compact).join("\n");
   return (
@@ -27,7 +29,7 @@ export function parseAlipay(input) {
       let v = lines[i].slice(match[0].length);
       for (let j = i + 1; j < lines.length && j < i + 4; j++) {
         if (
-          boundary.test(lines[j]) ||
+          isBoundary(lines[j]) ||
           /^(?:交易成功|自动扣款成功|支付成功)$/.test(lines[j])
         )
           break;
@@ -40,7 +42,7 @@ export function parseAlipay(input) {
   }
   const headerEnd = lines.findIndex(
     (s) =>
-      boundary.test(s) ||
+      isBoundary(s) ||
       /^(?:交易成功|自动扣款成功|支付成功|交易关闭|等待付款|退款成功)$/.test(s),
   );
   const amountIndex = lines.findIndex(
@@ -89,9 +91,7 @@ export function parseAlipay(input) {
   // Discounts are supplementary evidence, never a replacement for the headline
   // paid amount. Preserve the labels rather than merging them with the payment.
   f.Discount = lines
-    .filter((s) =>
-      /^(?:焕新折扣|工商银行立减(?:金)?|碰一下立减|优惠|优惠金额|立减)/.test(s),
-    )
+    .filter((s) => discountLabel.test(s))
     .join("；");
   return f;
 }

@@ -117,8 +117,8 @@ export function retryRegion(items, fields, width, height) {
 export function mergeRecognition(first, second) {
   const fields = { ...first.fields };
   if (
-    validReceiptOrder(fields) &&
-    validReceiptOrder(second.fields) &&
+    validOrderIdentifier(fields) &&
+    validOrderIdentifier(second.fields) &&
     fields.Transaction !== second.fields.Transaction
   )
     return { ...first };

@@ -9,7 +9,7 @@ self.addEventListener("install", (e) =>
       const c = await caches.open(SHELL);
       await c.addAll(
         ["", "app.js", "style.css", "icon.png", "manifest.webmanifest"].map(
-          absolute,
+          (path) => new Request(absolute(path), { cache: "reload" }),
         ),
       );
       await self.skipWaiting();
@@ -64,10 +64,10 @@ self.addEventListener("fetch", (e) => {
       try {
         c = await caches.open(SHELL);
       } catch {
-        return fetch(request);
+        return fetch(request, { cache: "no-cache" });
       }
       try {
-        const r = await fetch(request);
+        const r = await fetch(request, { cache: "no-cache" });
         if (!r.ok) {
           const saved =
             (await c.match(key)) ||

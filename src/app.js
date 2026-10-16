@@ -6,6 +6,7 @@ import {
   localDay,
   normalizeEditedFields,
   formatTotal,
+  createLatestRefresh,
 } from "./ui-utils.js";
 import {
   receiptTypes,
@@ -86,7 +87,7 @@ try {
 } catch {}
 let modelStore = getModelStore(model);
 $("#app").innerHTML =
-  `<header><a class="brand" href="./" aria-label="凭证查重助手首页"><img src="./icon.png" alt=""><span>凭证查重助手</span></a><nav aria-label="工具"><button class="icon" id="moreToggle" aria-label="更多操作" aria-expanded="false" aria-controls="menu" aria-haspopup="menu">${icon("more")}</button></nav><div class="menu" id="menu" role="menu" aria-label="更多操作" hidden><div class="menuGroup" role="none"><button role="menuitem" tabindex="-1" id="excel">导出为Excel表格</button></div><div class="menuGroup" role="none"><button role="menuitem" tabindex="-1" id="backup">备份当前凭证</button><button role="menuitem" tabindex="-1" id="restore">恢复备份</button></div><div class="menuGroup" role="none"><button role="menuitem" tabindex="-1" id="reocr">重新识别全部凭证</button></div></div></header><main><section class="intro"><div class="introContent"><p>本地识别 · 照片不上传</p></div></section><div class="overview" id="overview"><section class="stats" aria-label="凭证统计"><div><small>总金额 · 元</small><strong id="total">0.00</strong><span id="totalNote">暂无凭证</span></div><div><small>已保存凭证</small><strong id="count">0</strong><span>本地存储</span></div><div><small>重复凭证</small><strong id="duplicates">0</strong><span id="reviewCount">0 张待核对</span></div></section><section class="modelCard" id="modelCard" data-state="checking" aria-labelledby="modelTitle"><div class="modelHeading"><span class="modelGlyph">${icon("scanText")}</span><div><h2 id="modelTitle">OCR 视觉识别模型</h2><div class="modelStatus" role="status" aria-live="polite"><span class="statusLight" aria-hidden="true"></span><span id="modelStatus">正在检查</span></div><span id="modelReadyHint" class="modelReadyHint" hidden>可离线识别 · 照片不上传</span></div></div><p id="modelDescription">正在检查此浏览器中的识别资源。</p><div class="modelDownloadProgress" id="modelDownloadProgress" hidden><progress id="modelProgress" max="100" value="0" aria-label="识别模型下载进度"></progress><span id="modelProgressText"></span></div><div class="modelControls"><button class="secondary" id="downloadModel" disabled>${icon("download")}<span>下载识别模型</span></button><button id="cancelModel" class="textButton" hidden>取消下载</button><span class="modelPrivacy">仅下载模型 · 照片不上传</span></div></section></div><section class="library" aria-label="凭证列表"><div class="libraryHead filterRow"><div class="filters" role="group" aria-label="筛选凭证"><button data-filter="all" aria-pressed="true">全部</button><button data-filter="duplicates" aria-pressed="false">重复</button><button data-filter="review" aria-pressed="false">待核对</button></div><button class="primary importButton" id="import">${icon("photo")}导入照片</button></div><div class="libraryTools"><div id="selectionBar" hidden><span id="selectedCount"></span><button id="selectAll">全选当前结果</button><button id="deleteSelected" class="danger">删除所选</button></div><p id="selectionHint" class="selectionHint" hidden>长按凭证可多选</p></div><div id="importErrors" class="notice warn" role="status" hidden></div><div id="list"></div></section><footer><span class="footerPrivacy">${icon("shield")} 免费识别 · 无账号同步 · 凭证不上传</span><span class="appVersion">版本 v${APP_VERSION}</span></footer></main><input type="file" id="files" accept="image/*" multiple hidden><input type="file" id="zip" accept=".zip,application/zip" hidden><dialog id="progress" aria-labelledby="progressTitle" aria-describedby="progressPrivacy"><div class="recognitionHeading"><span class="recognitionGlyph">${icon("photo")}<span class="spinner"></span></span><span class="recognitionEyebrow">设备本地处理</span><h2 id="progressTitle">正在识别凭证</h2></div><div class="recognitionMetrics"><span id="progressCount" role="status" aria-live="polite">已处理 0 / 0 张</span><strong id="progressPercent">0<span>%</span></strong></div><progress id="recognitionProgress" max="100" value="0" aria-label="凭证处理进度"></progress><p id="progressFile" class="recognitionFile"></p><p id="progressPrivacy">照片不上传，请保持页面打开</p></dialog><div id="toast" role="status" hidden></div><dialog id="detail"><div id="detailBody"></div></dialog><dialog id="confirm"><h2 id="confirmTitle"></h2><p id="confirmText"></p><div class="actions"><button id="confirmCancel">取消</button><button id="confirmOK" class="danger">确认</button></div></dialog>`;
+  `<header><a class="brand" href="./" aria-label="凭证查重助手首页"><img src="./icon.png" alt=""><span role="heading" aria-level="1">凭证查重助手</span></a><nav aria-label="工具"><button class="icon" id="moreToggle" aria-label="更多操作" aria-expanded="false" aria-controls="menu" aria-haspopup="menu">${icon("more")}</button></nav><div class="menu" id="menu" role="menu" aria-label="更多操作" hidden><div class="menuGroup" role="none"><button role="menuitem" tabindex="-1" id="excel">导出为Excel表格</button></div><div class="menuGroup" role="none"><button role="menuitem" tabindex="-1" id="backup">备份当前凭证</button><button role="menuitem" tabindex="-1" id="restore">恢复备份</button></div><div class="menuGroup" role="none"><button role="menuitem" tabindex="-1" id="reocr">重新识别全部凭证</button></div></div></header><main><section class="intro"><div class="introContent"><p>本地识别 · 照片不上传</p></div></section><div class="overview" id="overview"><section class="stats" aria-label="凭证统计"><div><small>总金额 · 元</small><strong id="total">0.00</strong><span id="totalNote">暂无凭证</span></div><div><small>已保存凭证</small><strong id="count">0</strong><span>本地存储</span></div><div><small>重复凭证</small><strong id="duplicates">0</strong><span id="reviewCount">0 张待核对</span></div></section><section class="modelCard" id="modelCard" data-state="checking" aria-labelledby="modelTitle"><div class="modelHeading"><span class="modelGlyph">${icon("scanText")}</span><div><h2 id="modelTitle">OCR 视觉识别模型</h2><div class="modelStatus" role="status" aria-live="polite"><span class="statusLight" aria-hidden="true"></span><span id="modelStatus">正在检查</span></div><span id="modelReadyHint" class="modelReadyHint" hidden>可离线识别 · 照片不上传</span></div></div><p id="modelDescription">正在检查此浏览器中的识别资源。</p><div class="modelDownloadProgress" id="modelDownloadProgress" hidden><progress id="modelProgress" max="100" value="0" aria-label="识别模型下载进度"></progress><span id="modelProgressText"></span></div><div class="modelControls"><button class="secondary" id="downloadModel" disabled>${icon("download")}<span>下载识别模型</span></button><button id="cancelModel" class="textButton" hidden>取消下载</button><span class="modelPrivacy">仅下载模型 · 照片不上传</span></div></section></div><section class="library" aria-label="凭证列表"><div class="libraryHead filterRow"><div class="filters" role="group" aria-label="筛选凭证"><button data-filter="all" aria-pressed="true">全部</button><button data-filter="duplicates" aria-pressed="false">重复</button><button data-filter="review" aria-pressed="false">待核对</button></div><button class="primary importButton" id="import">${icon("photo")}导入照片</button></div><div class="libraryTools"><div id="selectionBar" hidden><span id="selectedCount"></span><button id="selectAll">全选当前结果</button><button id="deleteSelected" class="danger">删除所选</button></div><p id="selectionHint" class="selectionHint" hidden>长按凭证可多选</p></div><div id="importErrors" class="notice warn" role="status" hidden></div><div id="list"></div></section><footer><span class="footerPrivacy">${icon("shield")} 免费识别 · 无账号同步 · 凭证不上传</span><span class="appVersion">版本 v${APP_VERSION}</span></footer></main><input type="file" id="files" accept="image/*" multiple hidden><input type="file" id="zip" accept=".zip,application/zip" hidden><dialog id="progress" aria-labelledby="progressTitle" aria-describedby="progressPrivacy"><div class="recognitionHeading"><span class="recognitionGlyph">${icon("photo")}<span class="spinner"></span></span><span class="recognitionEyebrow">设备本地处理</span><h2 id="progressTitle">正在识别凭证</h2></div><div class="recognitionMetrics"><span id="progressCount" role="status" aria-live="polite">已处理 0 / 0 张</span><strong id="progressPercent">0<span>%</span></strong></div><progress id="recognitionProgress" max="100" value="0" aria-label="凭证处理进度"></progress><p id="progressFile" class="recognitionFile"></p><p id="progressPrivacy">照片不上传，请保持页面打开</p></dialog><div id="toast" role="status" hidden></div><dialog id="detail" aria-labelledby="detailTitle"><div id="detailBody"></div></dialog><dialog id="confirm"><h2 id="confirmTitle"></h2><p id="confirmText"></p><div class="actions"><button id="confirmCancel">取消</button><button id="confirmOK" class="danger">确认</button></div></dialog>`;
 const pageMotion = createPageMotion({
   intro: $(".introContent"),
   overview: $(".overview"),
@@ -99,7 +100,7 @@ let modelState = { ready: false, bytes: 0, total: modelStore.total },
 const offlineRegistration =
   "serviceWorker" in navigator
     ? navigator.serviceWorker
-        .register(new URL("sw.js", import.meta.url))
+        .register(new URL("sw.js", import.meta.url), { updateViaCache: "none" })
         .catch(() => null)
     : Promise.resolve(null);
 function focusModel() {
@@ -289,12 +290,12 @@ function setBusy(value) {
     }
   }
 }
-async function refresh() {
-  rows = await records();
+const refresh = createLatestRefresh(records, (latest) => {
+  rows = latest;
   rows.sort((a, b) => (b.imported || "").localeCompare(a.imported || ""));
   peers = peerMap(rows);
   render();
-}
+});
 function visible() {
   return filtered(rows, "", filter === "duplicates", peers).filter(
     (r) => filter !== "review" || r.warning,
@@ -412,13 +413,13 @@ async function showDetail(id, draft = null, original = null) {
   urls.push(u);
   const duplicates = peers.get(id) || [];
   $("#detailBody").innerHTML =
-    `<div class="dialogHeader"><div><small>${esc(r.name)}</small><h2>凭证详情</h2></div><button id="detailClose" class="icon" aria-label="关闭详情">${icon("close")}</button></div><div class="detailGrid"><div>${u ? `<a href="${u}" target="_blank" rel="noopener"><img class="receiptPhoto" src="${u}" alt="原始凭证，点击放大"></a>` : ""}</div><div><div class="notice ${r.warning ? "warn" : ""}">${esc(r.warning || "关键信息已识别，请与原图核对。")}</div>${duplicates.length ? `<div class="duplicateInfo"><strong>与 ${duplicates.length} 张凭证重复</strong>${duplicates.map((p) => `<p>${esc(rows.find((x) => x.id === p.id)?.name)}<br>${esc(p.reasons.join("、"))}</p>`).join("")}</div>` : ""}<form id="edit"><label>凭证类型<select name="Type">${receiptTypes.map((t) => `<option ${r.fields.Type === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>${receiptFieldDefs(
+    `<div class="dialogHeader"><div><small>${esc(r.name)}</small><h2 id="detailTitle">凭证详情</h2></div><button id="detailClose" class="icon" aria-label="关闭详情">${icon("close")}</button></div><div class="detailGrid"><div>${u ? `<a href="${u}" target="_blank" rel="noopener"><img class="receiptPhoto" src="${u}" alt="原始凭证，点击放大"></a>` : ""}</div><div><div class="notice ${r.warning ? "warn" : ""}">${esc(r.warning || "关键信息已识别，请与原图核对。")}</div>${duplicates.length ? `<div class="duplicateInfo"><strong>与 ${duplicates.length} 张凭证重复</strong>${duplicates.map((p) => `<p>${esc(rows.find((x) => x.id === p.id)?.name)}<br>${esc(p.reasons.join("、"))}</p>`).join("")}</div>` : ""}<form id="edit"><label>凭证类型<select name="Type">${receiptTypes.map((t) => `<option ${r.fields.Type === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>${receiptFieldDefs(
       r.fields,
     )
       .map(([k, l]) =>
         k === "PaymentKind"
           ? `<label>${l}<select name="PaymentKind">${["商户支付", "扫码付款", "个人转账"].map((v) => `<option ${v === r.fields.PaymentKind ? "selected" : ""}>${v}</option>`).join("")}</select></label>`
-          : `<label>${l}<input name="${k}" value="${esc(r.fields[k])}" ${k === "Amount" ? 'inputmode="decimal"' : ""} ${["Transaction", "Certificate", "MerchantOrder"].includes(k) ? 'class="number" autocapitalize="off" autocorrect="off" spellcheck="false"' : ""}></label>`,
+          : `<label>${l}<input name="${k}" value="${esc(r.fields[k])}" ${["Amount", "RefundAmount", "OrderAmount"].includes(k) ? 'inputmode="decimal"' : ""} ${["Transaction", "Certificate", "MerchantOrder"].includes(k) ? 'class="number" autocapitalize="off" autocorrect="off" spellcheck="false"' : ""}></label>`,
       )
       .join(
         "",
@@ -812,22 +813,26 @@ try {
   toast("本地数据库不可用：" + e.message);
 }
 await checkModel({ migrate: true });
-window.addEventListener("pageshow", () => {
-  if (!busy && !modelDownloading) checkModel();
-});
+// Safari can suspend a page and miss cross-tab broadcasts. Read the database
+// again when it returns, while preserving any open detail form and its revision.
+function externalRefresh() {
+  externalChange = true;
+  if (!busy) {
+    externalChange = false;
+    void refresh().catch((e) => toast(storageError(e)));
+  }
+}
+function foregroundRefresh() {
+  if (!busy && !modelDownloading) void checkModel();
+  externalRefresh();
+}
+window.addEventListener("pageshow", foregroundRefresh);
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && !busy && !modelDownloading) checkModel();
+  if (!document.hidden) foregroundRefresh();
 });
 
 const changes =
   typeof BroadcastChannel === "function"
     ? new BroadcastChannel("receipt-helper-changes")
     : null;
-if (changes)
-  changes.onmessage = () => {
-    externalChange = true;
-    if (!busy) {
-      externalChange = false;
-      void refresh().catch((e) => toast(storageError(e)));
-    }
-  };
+if (changes) changes.onmessage = externalRefresh;

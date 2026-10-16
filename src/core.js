@@ -48,7 +48,7 @@ export function receiptFieldDefs(f) {
       : isAlipay(f)
         ? screenshotFields.filter(
             ([key], i) =>
-              i < 4 || ["ProductDescription", "Note"].includes(key) || f[key],
+              i < 4 || ["ProductDescription", "Note", "TradeStatus"].includes(key) || f[key],
           )
         : fieldDefs.filter(
             ([key]) =>

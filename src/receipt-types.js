@@ -1,3 +1,4 @@
+import { parseMoney } from "./money.js";
 import { adaptiveDate } from "./adaptive.js";
 export const isAdaptive = (f) => f?.Type === "通用凭证";
 export const receiptTypes = [
@@ -11,13 +12,14 @@ export const receiptTypes = [
 export const isAlipay = (f) => f?.Type === "支付宝支付截图";
 export const isWechatScreenshot = (f) => f?.Type === "微信支付截图";
 export const isScreenshot = (f) => isAlipay(f) || isWechatScreenshot(f);
+const domainText = (value) => String(value || "").normalize("NFKC").replace(/\s+/g, "");
 export function orderDomain(f) {
   return isAdaptive(f)
     ? JSON.stringify([
         "adaptive",
-        f.Source || "",
-        f.Payee || "",
-        f.Amount || "",
+        domainText(f.Source),
+        domainText(f.Payee),
+        parseMoney(f.Amount),
         f.Traded || "",
       ])
     : isAlipay(f)
@@ -52,7 +54,7 @@ export function validReceiptOrder(f) {
         f.Payee &&
           /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(f.Traded || "") &&
           adaptiveDate(f.Traded) !== null &&
-          /^\d+(?:\.\d{1,2})?$/.test(f.Amount || "") &&
+          Boolean(parseMoney(f.Amount)) &&
           Number(f.Amount) > 0,
       ))
   );
@@ -102,7 +104,9 @@ export function wechatScreenshotFields(f) {
   ].filter(
     ([key], i) =>
       i < 4 ||
-      ["ProductDescription", "Note", "PaymentKind"].includes(key) ||
+      ["ProductDescription", "Note", "PaymentKind", "TradeStatus"].includes(key) ||
+      (["RefundAmount", "RefundTime"].includes(key) &&
+        (/退款/.test(f.TradeStatus || "") || f.RefundAmount || f.RefundTime)) ||
       f[key],
   );
 }

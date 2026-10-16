@@ -29,12 +29,23 @@ export function normalizeEditedFields(fields) {
   for (const key of ["Traded", "Applied", "Received", "RefundTime"])
     if (typeof result[key] === "string")
       result[key] = result[key].normalize("NFKC").trim();
-  if (typeof result.Amount === "string")
-    result.Amount = parseMoney(result.Amount) || result.Amount.trim();
+  for (const key of ["Amount", "RefundAmount", "OrderAmount"])
+    if (typeof result[key] === "string")
+      result[key] = parseMoney(result[key]) || result[key].trim();
   return result;
 }
 
 export function formatTotal(value) {
   const [whole, fraction = "00"] = value.split(".");
   return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "." + fraction;
+}
+
+// A slow read started earlier must not replace a newer database snapshot.
+export function createLatestRefresh(read, apply) {
+  let generation = 0;
+  return async () => {
+    const current = ++generation;
+    const value = await read();
+    if (current === generation) apply(value);
+  };
 }
