@@ -1,5 +1,7 @@
 import JSZip from "jszip";
 import { parseReceipt } from "./core.js";
+import { inspectImage } from "./image-safety.js";
+import { readZipEntry } from "./zip-safety.js";
 // Keep legacy stores inert so an application update never purges previously stored data.
 let db, opening;
 const request = (r) =>
@@ -250,39 +252,47 @@ export async function backup({ withSnapshot = false } = {}) {
     ? { blob, snapshot: snapshotOf(rows), count: rows.length }
     : blob;
 }
-export async function restoreZIP(file, { expectedSnapshot } = {}) {
-  // Capture before decompression; compare inside the final write transaction.
-  // The UI supplies the earlier safety-backup snapshot, including an empty DB.
-  const expected = expectedSnapshot ?? snapshotOf(await records());
+export async function prepareBackup(file) {
   const limit = BACKUP_LIMITS.bytes;
   const archiveBytes = file.size ?? file.byteLength;
   if (archiveBytes > limit) throw new Error("备份超过 500 MB");
-  let z = await JSZip.loadAsync(file);
+  const z = await JSZip.loadAsync(file instanceof Blob ? await file.arrayBuffer() : file);
   checkArchiveLimits(z, archiveBytes);
   if (!z.file("receipts.json")) throw new Error("备份缺少 receipts.json");
-  z = await JSZip.loadAsync(file, { checkCRC32: true });
-  const rows = JSON.parse(await z.file("receipts.json").async("string"));
+  // Reject suspicious paths and extra file kinds before inflating anything.
+  if (Object.values(z.files).some(e =>
+    (e.unsafeOriginalName && e.unsafeOriginalName !== e.name) ||
+    (!e.dir && e.name !== "receipts.json" && !/^photos\/[0-9a-f-]{36}\.(jpg|jpeg|png|bmp|heic)$/i.test(e.name))))
+    throw new Error("备份中有未支持的文件或路径无效");
+  const json = await readZipEntry(z.file("receipts.json"), BACKUP_LIMITS.jsonBytes);
+  const rows = JSON.parse(await json.text());
   if (!Array.isArray(rows) || rows.length > BACKUP_LIMITS.records)
     throw new Error("备份记录格式无效");
   const ids = new Set(),
     paths = new Set(),
     blobs = [],
     prepared = [];
-  let expanded = 0;
   for (const r of rows) {
     validateBackupRow(r, ids, paths);
     ids.add(r.id);
     paths.add(r.photo);
+  }
+  const allowed = new Set(["receipts.json", ...paths]);
+  if (Object.values(z.files).some(e => !e.dir && !allowed.has(e.name)))
+    throw new Error("备份中有未支持的文件");
+  let expanded = json.size;
+  for (const r of rows) {
     const entry = z.file(r.photo);
     if (!entry) throw new Error("备份中缺少照片：" + r.name);
     if (entry.unsafeOriginalName && entry.unsafeOriginalName !== r.photo)
       throw new Error("备份照片路径无效");
-    const b = await entry.async("blob");
+    const b = await readZipEntry(entry, Math.min(BACKUP_LIMITS.photoBytes, limit - expanded));
     expanded += b.size;
     if (expanded > limit) throw new Error("备份解压后过大");
     if ((await hash(b)) !== r.hash.toLowerCase())
       throw new Error("照片校验失败：" + r.name);
-    blobs.push(b);
+    const { type } = await inspectImage(b);
+    blobs.push(new Blob([b], { type }));
     const validated = parseReceipt([], r.fields);
     if (validated.fields.Type?.includes("转账")) {
       validated.fields.Payee = "";
@@ -295,9 +305,37 @@ export async function restoreZIP(file, { expectedSnapshot } = {}) {
       revision: crypto.randomUUID(),
     });
   }
-  const allowed = new Set(["receipts.json", ...paths]);
-  if (Object.values(z.files).some((e) => !e.dir && !allowed.has(e.name)))
-    throw new Error("备份中有未支持的文件");
+  return { prepared, blobs };
+}
+export function prepareBackupInWorker(file, timeoutMs = 90000) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("backup-worker.js", import.meta.url), {
+      type: "module",
+    });
+    let settled = false;
+    const finish = (error, result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      worker.terminate();
+      error ? reject(error) : resolve(result);
+    };
+    const timer = setTimeout(() => finish(new Error("备份处理超时，已停止解压；原数据未更改")), timeoutMs);
+    worker.onmessage = ({ data }) => finish(data.error ? new Error(data.error) : null, data.result);
+    worker.onerror = () => finish(new Error("备份处理失败，原数据未更改"));
+    worker.onmessageerror = worker.onerror;
+    try {
+      worker.postMessage(file);
+    } catch (error) {
+      finish(error);
+    }
+  });
+}
+export async function restoreZIP(file, { expectedSnapshot } = {}) {
+  // Snapshot before worker validation; compare inside the final write transaction.
+  const expected = expectedSnapshot ?? snapshotOf(await records());
+  const { prepared, blobs } = typeof window === "undefined"
+    ? await prepareBackup(file) : await prepareBackupInWorker(file);
   const d = await openDB(),
     t = d.transaction(["receipts", "photos"], "readwrite"),
     complete = done(t);
@@ -325,5 +363,5 @@ export async function restoreZIP(file, { expectedSnapshot } = {}) {
     throw writeError || error;
   }
   announceChange();
-  return rows.length;
+  return prepared.length;
 }

@@ -1,3 +1,4 @@
+import { pngBytes } from "./image-fixture.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { IDBFactory } from "fake-indexeddb";
@@ -9,7 +10,7 @@ async function setup(name) {
   return import("../src/storage.js?release-" + name);
 }
 async function fixture(s, overrides = {}) {
-  const id = crypto.randomUUID(), bytes = new Uint8Array([1, 2, 3]);
+  const id = crypto.randomUUID(), bytes = pngBytes();
   return {
     id, name: "合成凭证.png", photo: `photos/${id}.png`,
     hash: await s.hash(new Blob([bytes])), raw: "合成测试", warning: "",
@@ -17,7 +18,7 @@ async function fixture(s, overrides = {}) {
     ...overrides,
   };
 }
-const bytes = () => new Uint8Array([1, 2, 3]);
+const bytes = () => pngBytes();
 
 test("Alipay product is exported both alone and with other receipt types", async () => {
   const s = await setup("excel"), row = await fixture(s);

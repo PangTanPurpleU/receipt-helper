@@ -1,3 +1,4 @@
+import { inspectImage } from "./image-safety.js";
 import { APP_VERSION } from "./version.js";
 import { waitForOfflineRuntime } from "./offline-runtime.js";
 import {
@@ -409,11 +410,20 @@ async function showDetail(id, draft = null, original = null) {
   for (const old of urls) URL.revokeObjectURL(old);
   urls = [];
   if (draft) r = { ...r, fields: draft };
-  const u = b ? URL.createObjectURL(b) : "";
+  let u = "", imageWarning = "";
+  if (b) {
+    try {
+      const bytes = b instanceof Blob ? b : new Blob([b]);
+      const { type } = await inspectImage(bytes);
+      if (active !== id || request !== detailRequest) return false;
+      u = URL.createObjectURL(new Blob([bytes], { type }));
+    } catch { imageWarning = "原图格式或尺寸未通过安全检查，请转换为 JPG 或 PNG 后重新导入。"; }
+  }
+  if (active !== id || request !== detailRequest) return false;
   urls.push(u);
   const duplicates = peers.get(id) || [];
   $("#detailBody").innerHTML =
-    `<div class="dialogHeader"><div><small>${esc(r.name)}</small><h2 id="detailTitle">凭证详情</h2></div><button id="detailClose" class="icon" aria-label="关闭详情">${icon("close")}</button></div><div class="detailGrid"><div>${u ? `<a href="${u}" target="_blank" rel="noopener"><img class="receiptPhoto" src="${u}" alt="原始凭证，点击放大"></a>` : ""}</div><div><div class="notice ${r.warning ? "warn" : ""}">${esc(r.warning || "关键信息已识别，请与原图核对。")}</div>${duplicates.length ? `<div class="duplicateInfo"><strong>与 ${duplicates.length} 张凭证重复</strong>${duplicates.map((p) => `<p>${esc(rows.find((x) => x.id === p.id)?.name)}<br>${esc(p.reasons.join("、"))}</p>`).join("")}</div>` : ""}<form id="edit"><label>凭证类型<select name="Type">${receiptTypes.map((t) => `<option ${r.fields.Type === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>${receiptFieldDefs(
+    `<div class="dialogHeader"><div><small>${esc(r.name)}</small><h2 id="detailTitle">凭证详情</h2></div><button id="detailClose" class="icon" aria-label="关闭详情">${icon("close")}</button></div><div class="detailGrid"><div>${u ? `<a href="${u}" target="_blank" rel="noopener"><img class="receiptPhoto" src="${u}" alt="原始凭证，点击放大"></a>` : esc(imageWarning)}</div><div><div class="notice ${r.warning ? "warn" : ""}">${esc(r.warning || "关键信息已识别，请与原图核对。")}</div>${duplicates.length ? `<div class="duplicateInfo"><strong>与 ${duplicates.length} 张凭证重复</strong>${duplicates.map((p) => `<p>${esc(rows.find((x) => x.id === p.id)?.name)}<br>${esc(p.reasons.join("、"))}</p>`).join("")}</div>` : ""}<form id="edit"><label>凭证类型<select name="Type">${receiptTypes.map((t) => `<option ${r.fields.Type === t ? "selected" : ""}>${t}</option>`).join("")}</select></label>${receiptFieldDefs(
       r.fields,
     )
       .map(([k, l]) =>
@@ -601,9 +611,10 @@ async function importFiles(files) {
           warning: "",
         };
       try {
+        const { type } = await inspectImage(file);
         const recognized = await recognizeBatch(file);
         r.hash = recognized.hash;
-        await save({ ...r, ...recognized.result, model }, file);
+        await save({ ...r, ...recognized.result, model }, new Blob([file], { type }));
         count++;
       } catch (e) {
         failed++;
@@ -743,7 +754,7 @@ $("#backup").onclick = async () => {
   }
   try {
     await download(await backup(), "凭证查重助手备份-" + dated() + ".zip");
-    toast("备份已生成，请保存下载文件");
+    toast("备份已生成；ZIP 未加密，请妥善保存");
   } catch (e) {
     toast(storageError(e));
   }

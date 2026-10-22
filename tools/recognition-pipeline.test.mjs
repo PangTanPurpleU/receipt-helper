@@ -1,3 +1,4 @@
+import { pngBytes } from "./image-fixture.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { recognize, dispose } from "../src/ocr.js";
@@ -70,14 +71,14 @@ async function withEngine(responses, action) {
 }
 test("normal complete receipts only run one model prediction", () =>
   withEngine([lines(good)], async (count) => {
-    const r = await recognize(new Blob());
+    const r = await recognize(new Blob([pngBytes()]));
     assert.equal(r.fields.Transaction, good);
     assert.equal(count(), 1);
     assert.equal(r.warning, "");
   }));
 test("a successful anchored retry repairs the order and stops immediately", () =>
   withEngine([lines("45O000"), ["交易单号 " + good]], async (count) => {
-    const r = await recognize(new Blob());
+    const r = await recognize(new Blob([pngBytes()]));
     assert.equal(r.fields.Transaction, good);
     assert.equal(count(), 2);
     assert.equal(r.fields.Amount, "12.00");
@@ -86,14 +87,14 @@ test("an unsuccessful targeted retry falls back once, and never loops on unreada
   withEngine(
     [lines("45O000"), ["交易单号 ???"], ["交易单号 " + good]],
     async (count) => {
-      const r = await recognize(new Blob());
+      const r = await recognize(new Blob([pngBytes()]));
       assert.equal(r.fields.Transaction, good);
       assert.equal(count(), 3);
     },
   ));
 test("unreadable retry candidates remain flagged and are bounded", () =>
   withEngine([lines("45O000"), ["交易单号 ???"]], async (count) => {
-    const r = await recognize(new Blob());
+    const r = await recognize(new Blob([pngBytes()]));
     assert.match(r.warning, /单号/);
     assert.equal(count(), 3);
   }));
@@ -123,12 +124,12 @@ test("synchronous worker send failure permits a fresh engine on the next attempt
 
 test("blank photos fail with a useful message after one broad retry", () =>
   withEngine([[]], async (count) => {
-    await assert.rejects(recognize(new Blob()), /未识别到文字/);
+    await assert.rejects(recognize(new Blob([pngBytes()])), /未识别到文字/);
     assert.equal(count(), 2);
   }));
 test("a blank first pass can recover a complete screenshot and its correct type", () =>
   withEngine([[], lines(good)], async (count) => {
-    const r = await recognize(new Blob());
+    const r = await recognize(new Blob([pngBytes()]));
     assert.equal(r.fields.Type, "微信支付截图");
     assert.equal(r.fields.Transaction, good);
     assert.equal(r.warning, "");
@@ -139,7 +140,7 @@ test("a new receipt layout is extracted in one pass without requiring a provider
   withEngine(
     [["星河便利店", "日期 2026年10月15日", "商品名称 矿泉水", "合计 6.50"]],
     async (count) => {
-      const r = await recognize(new Blob());
+      const r = await recognize(new Blob([pngBytes()]));
       assert.equal(r.fields.Type, "通用凭证");
       assert.equal(r.fields.Amount, "6.50");
       assert.equal(r.fields.Traded, "2026-10-15");
@@ -151,7 +152,7 @@ test("adaptive retry fills evidence-backed fields and retains valid original val
   withEngine(
     [["星河便利店", "日期 2026年10月15日", "金额 ???"], ["实付金额 6.50"]],
     async (count) => {
-      const r = await recognize(new Blob());
+      const r = await recognize(new Blob([pngBytes()]));
       assert.equal(r.fields.Type, "通用凭证");
       assert.equal(r.fields.Amount, "6.50");
       assert.equal(r.fields.Payee, "星河便利店");

@@ -104,7 +104,8 @@ test("shell requests revalidate the HTTP cache instead of persisting a stale app
 test("installing a new shell bypasses old HTTP entries for every shell asset", async () => {
   const app = await setup(async () => new Response("fresh"));
   await app.install();
-  assert.equal(app.installed.length, 5);
+  assert.equal(app.installed.length, 6);
   assert.ok(app.installed.every(request => request.cache === "reload"));
   assert.ok(app.installed.some(request => request.url.endsWith("/app.js")));
+  assert.ok(app.installed.some(request => request.url.endsWith("/backup-worker.js")));
 });

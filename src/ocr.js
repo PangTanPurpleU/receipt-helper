@@ -1,3 +1,4 @@
+import { inspectImage, checkDimensions } from "./image-safety.js";
 import { parseReceipt, orderedLines, needsRecognitionRetry } from "./core.js";
 import { retryRegion, mergeRecognition } from "./recognition-retry.js";
 let worker,
@@ -93,23 +94,40 @@ export async function dispose() {
   pending.clear();
 }
 export async function canvasFor(file, max = 3000) {
+  await inspectImage(file);
   let source;
   try {
-    source = await createImageBitmap(file, { imageOrientation: "from-image" });
-  } catch {
+    source = await new Promise((resolve, reject) => {
+      let expired = false;
+      const timer = setTimeout(() => {
+        expired = true;
+        reject(new Error("图片解码超时，请转换或缩小图片后重试"));
+      }, 20000);
+      Promise.resolve().then(() => createImageBitmap(file, { imageOrientation: "from-image" })).then(bitmap => {
+        clearTimeout(timer);
+        if (expired) bitmap.close?.(); else resolve(bitmap);
+      }, error => { clearTimeout(timer); reject(error); });
+    });
+  } catch (error) {
+    if (error.message.includes("解码超时")) throw error;
     const u = URL.createObjectURL(file);
     try {
       source = await new Promise((resolve, reject) => {
         const i = new Image();
-        i.onload = () => resolve(i);
-        i.onerror = () =>
-          reject(new Error("图片格式暂不支持，请转为 JPG 或 PNG 后导入"));
+        const finish = (error) => {
+          clearTimeout(timer); i.onload = i.onerror = null;
+          if (error) { i.src = ""; reject(error); } else resolve(i);
+        };
+        const timer = setTimeout(() => finish(new Error("图片解码超时，请转换或缩小图片后重试")), 20000);
+        i.onload = () => finish();
+        i.onerror = () => finish(new Error("图片格式暂不支持，请转为 JPG 或 PNG 后导入"));
         i.src = u;
       });
     } finally {
       URL.revokeObjectURL(u);
     }
   }
+  try { checkDimensions(source.width, source.height); } catch (e) { source.close?.(); throw e; }
   const ratio = Math.min(1, max / Math.max(source.width, source.height)),
     c = document.createElement("canvas");
   c.width = Math.round(source.width * ratio);

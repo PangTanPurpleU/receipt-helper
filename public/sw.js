@@ -8,7 +8,7 @@ self.addEventListener("install", (e) =>
     (async () => {
       const c = await caches.open(SHELL);
       await c.addAll(
-        ["", "app.js", "style.css", "icon.png", "manifest.webmanifest"].map(
+        ["", "app.js", "backup-worker.js", "style.css", "icon.png", "manifest.webmanifest"].map(
           (path) => new Request(absolute(path), { cache: "reload" }),
         ),
       );
@@ -42,6 +42,7 @@ self.addEventListener("fetch", (e) => {
     "",
     "index.html",
     "app.js",
+    "backup-worker.js",
     "style.css",
     "icon.png",
     "manifest.webmanifest",
