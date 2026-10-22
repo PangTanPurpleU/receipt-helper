@@ -115,7 +115,7 @@ await writeFile(
 );
 let licenses =
   "凭证查重助手浏览器本地版\n\nPP-OCRv6 tiny models: PaddlePaddle Authors, Apache-2.0\nhttps://github.com/PaddlePaddle/PaddleOCR\n\n";
-for (const pkg of ["@paddleocr/paddleocr-js", "jszip"]) {
+for (const pkg of ["@paddleocr/paddleocr-js", "jszip", "@zip.js/zip.js"]) {
   const root = await realpath("node_modules/" + pkg);
   for (const f of await readdir(root))
     if (/^licen[cs]e/i.test(f))

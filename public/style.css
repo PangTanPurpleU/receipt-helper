@@ -759,6 +759,15 @@ dialog p {
 #confirm h2 {
   font-size: 19px;
 }
+.passwordDialog { max-width: 440px; }
+.passwordDialog h2 { font-size: 21px; }
+.passwordDialog label { display: grid; gap: 8px; margin-top: 16px; }
+.passwordDialog input:not([type="checkbox"]) { width: 100%; min-height: 44px; }
+.passwordDialog .passwordVisibility { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.passwordVisibility input { width: 18px; height: 18px; padding: 0; margin: 0; }
+.passwordDialog .actions button { white-space: nowrap; flex-shrink: 0; }
+.passwordDialog .actions .primary { width: auto; margin: 0; flex: 1; }
+.passwordDialog .actions .primary { background: var(--accent); color: white; }
 .actions {
   display: flex;
   gap: 10px;

@@ -1,6 +1,6 @@
 {
   "name": "receipt-helper-web",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@paddleocr/paddleocr-js": "0.4.2",
+    "@zip.js/zip.js": "2.24.0",
     "jszip": "3.10.2"
   },
   "devDependencies": {

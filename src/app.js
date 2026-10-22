@@ -1,3 +1,5 @@
+import { requestBackupPassword } from "./backup-password.js";
+import { isEncryptedBackup } from "./backup-crypto.js";
 import { inspectImage } from "./image-safety.js";
 import { APP_VERSION } from "./version.js";
 import { waitForOfflineRuntime } from "./offline-runtime.js";
@@ -746,52 +748,55 @@ $("#excel").onclick = async () => {
     toast(storageError(e));
   }
 };
+function backupProgress(title) {
+  setBusy(true);
+  $("#progressTitle").textContent = title;
+  $("#progressCount").textContent = "正在本地处理，请稍候";
+  $("#progressPercent").textContent = "";
+  $("#progressFile").textContent = "";
+  $("#recognitionProgress").removeAttribute("value");
+}
 $("#backup").onclick = async () => {
   closeMenu();
-  if (!rows.length) {
-    toast("暂无可备份的凭证");
-    return;
-  }
+  if (busy) return;
+  if (!rows.length) { toast("暂无可备份的凭证"); return; }
+  let settings = await requestBackupPassword();
+  if (!settings || busy) return;
+  backupProgress("正在加密备份");
   try {
-    await download(await backup(), "凭证查重助手备份-" + dated() + ".zip");
-    toast("备份已生成；ZIP 未加密，请妥善保存");
-  } catch (e) {
-    toast(storageError(e));
-  }
+    await download(await backup({ password: settings.backupPassword }), "凭证查重助手加密备份-" + dated() + ".zip");
+    toast("加密备份已生成，请妥善保存文件和密码");
+  } catch (e) { toast(storageError(e)); }
+  finally { settings = null; setBusy(false); }
 };
 $("#restore").onclick = () => {
   closeMenu();
-  $("#zip").click();
+  if (!busy) $("#zip").click();
 };
-$("#zip").onchange = (e) => {
+$("#zip").onchange = async (e) => {
   const file = e.target.files[0];
   e.target.value = "";
-  if (!file) return;
-  confirm(
-    "恢复备份？",
-    "备份会替换当前列表。当前凭证会先自动下载 ZIP 备份。",
-    async () => {
-      if (busy) return;
-      setBusy(true);
-      $("#progressTitle").textContent = "正在恢复备份";
-      $("#progressCount").textContent = "正在校验备份文件";
-      $("#progressPercent").textContent = "";
-      $("#recognitionProgress").removeAttribute("value");
-      try {
-        const safety = await backup({ withSnapshot: true });
-        if (safety.count)
-          await download(safety.blob, "恢复前自动备份-" + dated() + ".zip");
-        const n = await restoreZIP(file, { expectedSnapshot: safety.snapshot });
-        selected.clear();
-        await refresh();
-        toast(`已恢复 ${n} 张凭证`);
-      } finally {
-        setBusy(false);
-        $("#zip").value = "";
-      }
-    },
-    "恢复备份",
-  );
+  if (!file || busy) return;
+  let settings, processing = false;
+  try {
+    settings = await requestBackupPassword({
+      restore: true, encrypted: await isEncryptedBackup(file), safety: (await records()).length > 0,
+    });
+    if (!settings || busy) return;
+    backupProgress("正在恢复备份");
+    processing = true;
+    const safety = await backup({ withSnapshot: true, password: settings.backupPassword });
+    if (safety.count) {
+      // A concurrent import while the dialog was open must never create a plain safety download.
+      if (!settings.backupPassword) throw new Error("当前凭证已发生变化，请重新恢复并设置安全备份密码");
+      await download(safety.blob, "恢复前加密备份-" + dated() + ".zip");
+    }
+    const n = await restoreZIP(file, { expectedSnapshot: safety.snapshot, password: settings.password });
+    selected.clear();
+    await refresh();
+    toast(`已恢复 ${n} 张凭证`);
+  } catch (error) { toast(storageError(error)); }
+  finally { settings = null; if (processing) setBusy(false); }
 };
 $("#reocr").onclick = () => {
   closeMenu();

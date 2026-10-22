@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { parseReceipt } from "./core.js";
 import { inspectImage } from "./image-safety.js";
 import { readZipEntry } from "./zip-safety.js";
+import { decryptBackup, encryptBackup, validateBackupPassword } from "./backup-crypto.js";
 // Keep legacy stores inert so an application update never purges previously stored data.
 let db, opening;
 const request = (r) =>
@@ -199,7 +200,8 @@ function checkArchiveLimits(z, archiveBytes) {
       );
   }
 }
-export async function backup({ withSnapshot = false } = {}) {
+export async function backup({ withSnapshot = false, password } = {}) {
+  if (password !== undefined) validateBackupPassword(password);
   const d = await openDB(),
     t = d.transaction(["receipts", "photos"], "readonly"),
     complete = done(t),
@@ -246,17 +248,23 @@ export async function backup({ withSnapshot = false } = {}) {
       throw new Error("照片校验失败：" + r.name);
     z.file(r.photo, b);
   }
-  const blob = await z.generateAsync({ type: "blob", compression: "STORE" });
+  let blob = await z.generateAsync({ type: "blob", compression: "STORE" });
   if (blob.size > BACKUP_LIMITS.bytes) throw new Error("备份超过 500 MB");
+  if (password !== undefined) {
+    blob = typeof window === "undefined"
+      ? await encryptBackup(blob, password, BACKUP_LIMITS.bytes)
+      : (await prepareBackupInWorker({ operation: "encrypt", file: blob, password })).blob;
+  }
   return withSnapshot
     ? { blob, snapshot: snapshotOf(rows), count: rows.length }
     : blob;
 }
-export async function prepareBackup(file) {
+export async function prepareBackup(file, password) {
   const limit = BACKUP_LIMITS.bytes;
   const archiveBytes = file.size ?? file.byteLength;
   if (archiveBytes > limit) throw new Error("备份超过 500 MB");
-  const z = await JSZip.loadAsync(file instanceof Blob ? await file.arrayBuffer() : file);
+  const plain = await decryptBackup(file, password, limit);
+  const z = await JSZip.loadAsync(await plain.arrayBuffer());
   checkArchiveLimits(z, archiveBytes);
   if (!z.file("receipts.json")) throw new Error("备份缺少 receipts.json");
   // Reject suspicious paths and extra file kinds before inflating anything.
@@ -331,11 +339,12 @@ export function prepareBackupInWorker(file, timeoutMs = 90000) {
     }
   });
 }
-export async function restoreZIP(file, { expectedSnapshot } = {}) {
+export async function restoreZIP(file, { expectedSnapshot, password } = {}) {
   // Snapshot before worker validation; compare inside the final write transaction.
   const expected = expectedSnapshot ?? snapshotOf(await records());
   const { prepared, blobs } = typeof window === "undefined"
-    ? await prepareBackup(file) : await prepareBackupInWorker(file);
+    ? await prepareBackup(file, password)
+    : await prepareBackupInWorker({ operation: "restore", file, password });
   const d = await openDB(),
     t = d.transaction(["receipts", "photos"], "readwrite"),
     complete = done(t);
