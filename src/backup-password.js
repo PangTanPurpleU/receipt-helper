@@ -23,6 +23,13 @@ export function requestBackupPassword({ restore = false, encrypted = false, safe
   return new Promise(resolve => {
     const form = dialog.querySelector("form"), error = dialog.querySelector('[role="alert"]');
     let result = null;
+    const clearError = () => {
+      error.hidden = true;
+      for (const input of form.querySelectorAll('[aria-invalid="true"]')) {
+        input.removeAttribute("aria-invalid"); input.setCustomValidity("");
+      }
+    };
+    form.addEventListener("input", clearError);
     form.elements.showPassword.onchange = () => {
       for (const input of form.querySelectorAll('input:not([type="checkbox"])'))
         input.type = form.elements.showPassword.checked ? "text" : "password";
@@ -34,7 +41,15 @@ export function requestBackupPassword({ restore = false, encrypted = false, safe
         if (!restore || safety) validateBackupPassword(backupPassword, form.elements.confirmation.value);
         result = { password: form.elements.restorePassword?.value || "", backupPassword };
         dialog.close();
-      } catch (e) { error.textContent = e.message; error.hidden = false; }
+      } catch (e) {
+        const field = form.elements.backupPassword.value !== form.elements.confirmation.value
+          ? form.elements.confirmation : form.elements.backupPassword;
+        error.id = "backupPasswordError";
+        error.textContent = e.message; error.hidden = false;
+        field.setAttribute("aria-invalid", "true");
+        field.setAttribute("aria-describedby", error.id);
+        field.focus();
+      }
     };
     dialog.querySelector(".cancelPassword").onclick = () => dialog.close();
     dialog.onclose = () => {

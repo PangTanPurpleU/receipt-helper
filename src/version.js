@@ -1,2 +1,2 @@
 // Generated from package.json by tools/build.mjs.
-export const APP_VERSION = "1.0.5";
+export const APP_VERSION = "1.0.6";
