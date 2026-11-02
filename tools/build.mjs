@@ -85,8 +85,8 @@ await writeFile(
     JSON.stringify(packs) +
     ';\nexport const MODEL_ASSETS=MODEL_PACKS["paddle-v6-tiny"];\n',
 );
-const { version } = JSON.parse(await readFile("package.json", "utf8"));
-await writeFile("src/version.js", `// Generated from package.json by tools/build.mjs.\nexport const APP_VERSION = ${JSON.stringify(version)};\n`);
+const { version, displayVersion = version } = JSON.parse(await readFile("package.json", "utf8"));
+await writeFile("src/version.js", `// Generated from package.json by tools/build.mjs.\nexport const APP_VERSION = ${JSON.stringify(displayVersion)};\n`);
 await build({ ...options, entryPoints: ["src/app.js", "src/backup-worker.js"] });
 for (const path of [
   "index.html",
