@@ -1622,7 +1622,7 @@ main { max-width: 1120px; }
 .quickAction { padding: 0 15px; border-radius: 12px; font-size: 13px; font-weight: 550; color: var(--ink); }
 .quickAction[data-action="backup"] { background: var(--surface); border: 1px solid var(--line); }
 .overview { gap: 16px; }
-.stats { border-radius: 22px; padding: 30px; background: linear-gradient(115deg, var(--surface), var(--wash)); box-shadow: none; }
+.stats { border-radius: 22px; padding: 30px; background: var(--surface); box-shadow: none; }
 .stats > div:first-child strong { --total-max: 48px; }
 .stats > div:not(:first-child) strong { font-size: 30px; }
 .stats small { font-weight: 550; }
@@ -1673,4 +1673,22 @@ main { max-width: 1120px; }
   .library { margin-top: 26px; }
   .receipt { padding: 17px 15px; gap: 12px; }
   .receiptTitle b { font-size: 17px; }
+}
+
+/* Search expands from its trigger; only clipping and opacity animate. */
+.libraryTitle { position: relative; min-height: 48px; }
+.searchDock { flex: 0 0 44px; height: 46px; }
+.searchDock .receiptSearch { position: absolute; right: 0; top: 0; width: min(320px, 48%); height: 46px; padding-right: 48px; clip-path: inset(0 0 0 calc(100% - 44px) round 13px); opacity: 0; pointer-events: none; transition: clip-path 200ms var(--ease-out), opacity 160ms ease; }
+.searchDock[data-open="true"] .receiptSearch { clip-path: inset(0 round 13px); opacity: 1; pointer-events: auto; }
+.searchToggle { position: absolute; right: 0; top: 1px; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.searchToggle svg { width: 19px; height: 19px; }
+.searchDock[data-open="true"] .searchToggle { border-color: transparent; background: transparent; color: var(--muted); }
+@media (max-width: 600px) {
+  .libraryTitle { flex-direction: row; align-items: center; gap: 12px; }
+  .searchDock .receiptSearch { width: 100%; }
+  .libraryTitle > div:first-child { transition: opacity 160ms ease; }
+  .libraryTitle[data-search-open="true"] > div:first-child { opacity: 0; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .searchDock .receiptSearch, .libraryTitle > div:first-child { transition: none; }
 }
